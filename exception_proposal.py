@@ -1,6 +1,6 @@
 import locale
 import re
-from tkinter import Tk, Label, Entry, Button, W, Menu, Toplevel, END, Spinbox, E, IntVar, Frame, StringVar
+from tkinter import Tk, Label, Entry, Button, W, Menu, Toplevel, END, Spinbox, E, IntVar, Frame, StringVar, LEFT, X
 from tkinter.ttk import Combobox
 from pyperclip import copy
 
@@ -62,8 +62,10 @@ class ExceptionProposalWindow:
         Label(name="email_address_label", text="E-mail").grid(row=8, column=0, sticky=W, pady=5)
         self.email_address = Entry(name="", validate="key", validatecommand=validate_email, width=35)
         self.email_address.grid(row=8, column=1, columnspan=3, sticky=E)
-        Button(name="copy", text="Copiar", command=self.copy).grid(row=9, column=0, pady=5, columnspan=2)
-        Button(name="reset", text="Redefinir", command=self.reset).grid(row=9, column=2, columnspan=2)
+        frame = Frame()
+        frame.grid(row=9, column=0, columnspan=4, sticky="nsew")
+        Button(master=frame, name="copy", text="Copiar", command=self.copy).pack(side=LEFT, fill=X, expand=1, padx=40)
+        Button(master=frame, name="reset", text="Redefinir", command=self.reset).pack(side=LEFT, fill=X, expand=1, padx=40)
         self.log = Label()
         self.log.grid(row=10, column=0, columnspan=4, sticky=W)
         self.apply_default_values()
