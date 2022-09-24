@@ -4,9 +4,8 @@ from tkinter import Tk, Label, Entry, Button, W, Menu, Toplevel, END, Spinbox, E
 from tkinter.ttk import Combobox
 from pyperclip import copy
 
-from proposed import validate_instalment, Proposed
-
-locale.setlocale(locale.LC_MONETARY, 'pt_BR.UTF-8')
+from brl_string import BRLString
+from proposed import Proposed, validate_max_and_min_value_for_integer_string
 
 
 class ExceptionProposalWindow:
@@ -29,7 +28,7 @@ class ExceptionProposalWindow:
         validate_cpf = self.window.register(self.validate_cpf), "%P"
         validate_delayed_days = self.window.register(self.validate_delayed_days), "%P"
         validate_phone_number = self.window.register(self.validate_phone_number), "%P"
-        validate_instalment_ = self.window.register(validate_instalment), "%P"
+        validate_instalment = self.window.register(lambda string: BRLString(string).is_valid_for_input()), "%P"
         validate_proposed_payment_date = self.window.register(self.validate_proposed_payment_date), "%P"
         validate_email = self.window.register(self.validate_email), "%P"
         Label(name="cpf_label", text="CPF").grid(row=0, column=0, sticky=W, pady=5, columnspan=2)
@@ -39,7 +38,7 @@ class ExceptionProposalWindow:
         self.product = Combobox(values=("Cbrcrel", "Ccrcfi", "Epcfi"), state="readonly", width=10, textvariable=product)
         self.product.grid(row=1, column=2, columnspan=2, sticky=E)
         Label(name="updated_value_label", text="Valor atualizado").grid(row=2, column=0, sticky=W, pady=5, columnspan=2)
-        self.updated_value = Entry(validate="key", validatecommand=validate_instalment_, width=10)
+        self.updated_value = Entry(validate="key", validatecommand=validate_instalment, width=10)
         self.updated_value.grid(row=2, column=2, columnspan=2, sticky=E)
         Label(name="promotion_value_label", text="Valor com desconto").grid(row=3, column=0, sticky=W, pady=5)
         self.promotion = Proposed(product, self.timesvariable)
@@ -130,7 +129,7 @@ class ExceptionProposalWindow:
             lines = (
                 f'CPF: {cpf}',
                 f'Produto: {self.product.get()}',
-                f'Valor atualizado: {locale.currency(brl_to_float(updated_value), grouping=True)}',
+                f'Valor atualizado: {BRLString(updated_value).get_formated()}',
                 f'Valor com desconto: {self.promotion.get_instalment_formated()}',
                 f'Dias em atraso: {delayed_days}',
                 f'Data proposta para pagamento: D+{proposed_payment_date}',

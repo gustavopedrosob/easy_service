@@ -2,6 +2,8 @@ import locale
 from tkinter import Frame, Entry, Spinbox, END, E
 import re
 
+from brl_string import BRLString
+
 
 def validate_max_and_min_value_for_integer_string(something: str, max_: int, min_: int):
     if something.isdigit():
@@ -15,23 +17,11 @@ def validate_max_and_min_value_for_integer_string(something: str, max_: int, min
         return True
 
 
-def validate_instalment(something: str):
-    match = re.match(r"^\d{0,3}(?:\.(?<=\.)\d{0,3})?(?:,(?<=,)\d{0,2})?$", something)
-    if match or not something:
-        return True
-    else:
-        return False
-
-
-def brl_to_float(something: str):
-    return float(something.replace(".", "").replace(",", "."))
-
-
 class Proposed(Frame):
     def __init__(self, productvariable, timesvariable, **kwargs):
         super().__init__(**kwargs)
         validate_times = self.register(self.validate_times), "%P"
-        validate_instalment_ = self.register(validate_instalment), "%P"
+        validate_instalment_ = self.register(lambda string: BRLString(string).is_valid_for_input()), "%P"
         self.productvariable = productvariable
         self.timesvariable = timesvariable
         productvariable.trace("w", lambda *args: self.on_product_variable_change())
@@ -56,14 +46,9 @@ class Proposed(Frame):
 
     def get_instalment_formated(self):
         if all((self.first_instalment.get(), self.times.get(), self.else_instalment.get())):
-            return "{} + {}x {}".format(self.get_currency_of_entry(self.first_instalment), self.timesvariable.get(),
-                                        self.get_currency_of_entry(self.else_instalment))
+            return "{} + {}x {}".format(BRLString(self.first_instalment.get()).get_formated(), self.timesvariable.get(), BRLString(self.else_instalment.get()).get_formated())
         else:
-            return "{}".format(self.get_currency_of_entry(self.first_instalment))
-
-    @staticmethod
-    def get_currency_of_entry(object_):
-        return locale.currency(brl_to_float(object_.get()), grouping=True)
+            return "{}".format(BRLString(self.first_instalment.get()).get_formated())
 
     def is_empty(self):
         if all((self.first_instalment.get(), self.times.get(),
