@@ -5,6 +5,7 @@ from tkinter import Tk, Label, Entry, Button, W, Menu, Toplevel, END, Spinbox, E
 from tkinter.ttk import Combobox
 from pyperclip import copy
 
+from DplusX import DplusX
 from brl_string import BRLString
 from cpf_string import CPFString
 from phone_str import PhoneString
@@ -53,7 +54,7 @@ class ExceptionProposalWindow:
         self.delayed_days.grid(row=4, column=2, columnspan=2, sticky=E)
         Label(name="proposed_payment_date_label", text="Data proposta para pagamento").grid(row=5, column=0, sticky=W,
                                                                                             pady=5, columnspan=2)
-        self.date = Label(text=(datetime.now() + timedelta(days=1)).strftime("(%d/%m/%Y)"))
+        self.date = Label()
         self.date.grid(row=5, column=2, sticky=E)
         self.proposed_payment_date = Spinbox(validate="key", validatecommand=validate_proposed_payment_date, width=5,
                                              from_=1, to=5, textvariable=self.datevariable)
@@ -85,7 +86,7 @@ class ExceptionProposalWindow:
         self.product.current(0)
 
     def on_date_change(self, *args):
-        self.date.config(text=(datetime.now() + timedelta(days=self.datevariable.get())).strftime("(%d/%m/%Y)"))
+        self.date.config(text=DplusX(self.datevariable.get()).get_date_formated())
 
     @staticmethod
     def validate_proposed_payment_date(something: str):
@@ -127,7 +128,7 @@ class ExceptionProposalWindow:
                 f'Valor atualizado: {BRLString(updated_value).get_formated()}',
                 f'Valor com desconto: {self.promotion.get_instalment_formated()}',
                 f'Dias em atraso: {delayed_days}',
-                f'Data proposta para pagamento: D+{proposed_payment_date}',
+                f'Data proposta para pagamento: {DplusX(self.datevariable.get()).get_date_formated()}',
                 f'Proposta para pagamento: {"À vista" if self.timesvariable.get() == 1 else "Parcelamento"}',
                 f'Valor proposto para pagamento: {self.proposed_payment.get_instalment_formated()}',
                 f'Telefone: {PhoneString(phone_number).get_formated()}',
