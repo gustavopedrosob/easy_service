@@ -9,6 +9,7 @@ from DplusX import DplusX
 from about_window import AboutWindow
 from brl_string import BRLString
 from cpf_string import CPFString
+from email_string import EmailString
 from phone_str import PhoneString
 from proposed import Proposed, validate_max_and_min_value_for_integer_string
 
@@ -31,7 +32,7 @@ class ExceptionProposalWindow:
         validate_phone_number = self.window.register(lambda string: PhoneString(string).is_valid_for_input()), "%P"
         validate_instalment = self.window.register(lambda string: BRLString(string).is_valid_for_input()), "%P"
         validate_proposed_payment_date = self.window.register(self.validate_proposed_payment_date), "%P"
-        validate_email = self.window.register(self.validate_email), "%P"
+        validate_email = self.window.register(lambda string: EmailString(string).is_valid_for_input()), "%P"
         frame_1 = Frame()
         frame_1.pack(padx=20, pady=20)
         Label(master=frame_1, name="cpf_label", text="CPF").grid(row=0, column=0, sticky=W, pady=5, columnspan=2)
@@ -92,14 +93,6 @@ class ExceptionProposalWindow:
     @staticmethod
     def validate_delayed_days(something: str):
         return validate_max_and_min_value_for_integer_string(something, 999, 0)
-
-    @staticmethod
-    def validate_email(something: str):
-        matched = re.match(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+", something)
-        if matched or len(something) == 0:
-            return True
-        else:
-            return False
 
     def copy(self):
         if not (cpf := self.cpf.get()):
