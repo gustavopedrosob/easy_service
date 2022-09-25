@@ -13,7 +13,8 @@ class PhoneString:
             return True
 
     def is_valid(self) -> str:
-        compiled = re.compile(r"^\(?([14689][1-9]|2[12478]|3[1234578]|5[1345]|7[13457])((?<=\(\d{2}))?\)?\s{0,2}9?\s?\d{4}[\s-]?\d{4}$")
+        compiled = re.compile(
+            r"^\(?([14689][1-9]|2[12478]|3[1234578]|5[1345]|7[13457])((?<=\(\d{2}))?\)?\s{0,2}9?\s?\d{4}[\s-]?\d{4}$")
         return bool(compiled.match(self.string))
 
     def get_formated(self) -> str:

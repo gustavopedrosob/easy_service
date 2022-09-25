@@ -1,9 +1,8 @@
-import locale
 from tkinter import Frame, Entry, Spinbox, END, E
-import re
 
 from brl_string import BRLString
 from instalment_string import InstalmentString
+from integer_string import IntegerString
 
 
 class Proposed(Frame):
@@ -14,12 +13,34 @@ class Proposed(Frame):
         self.productvariable = productvariable
         self.timesvariable = timesvariable
         productvariable.trace("w", lambda *args: self.on_product_variable_change())
-        self.first_instalment = Entry(self, width=10, validate="key", validatecommand=validate_instalment_)
-        self.first_instalment.grid(row=0, column=0, sticky=E)
-        self.times = Spinbox(self, width=5, validate="key", validatecommand=validate_times, textvariable=timesvariable)
-        self.times.grid(row=0, column=1, sticky=E)
-        self.else_instalment = Entry(self, width=10, validate="key", validatecommand=validate_instalment_)
-        self.else_instalment.grid(row=0, column=2, sticky=E)
+        self.first_instalment = Entry(
+            self,
+            width=10,
+            validate="key",
+            validatecommand=validate_instalment_)
+        self.first_instalment.grid(
+            row=0,
+            column=0,
+            sticky=E)
+        self.times = Spinbox(
+            self,
+            width=5,
+            validate="key",
+            validatecommand=validate_times,
+            textvariable=timesvariable)
+        self.times.grid(
+            row=0,
+            column=1,
+            sticky=E)
+        self.else_instalment = Entry(
+            self,
+            width=10,
+            validate="key",
+            validatecommand=validate_instalment_)
+        self.else_instalment.grid(
+            row=0,
+            column=2,
+            sticky=E)
 
     def on_product_variable_change(self):
         if self.productvariable.get() == "Cbrcrel":
@@ -29,12 +50,13 @@ class Proposed(Frame):
 
     def validate_times(self, something: str):
         if self.productvariable.get() == "Cbrcrel":
-            return validate_max_and_min_value_for_integer_string(something, 25, 0)
+            return IntegerString(something).is_valid_for_input(25, 0)
         else:
-            return validate_max_and_min_value_for_integer_string(something, 19, 0)
+            return IntegerString(something).is_valid_for_input(19, 0)
 
     def get_instalment_formated(self):
-        instalment_string = InstalmentString(BRLString(self.first_instalment.get()), int(self.timesvariable.get()), BRLString(self.else_instalment.get()))
+        instalment_string = InstalmentString(BRLString(self.first_instalment.get()), int(self.timesvariable.get()),
+                                             BRLString(self.else_instalment.get()))
         return instalment_string.get_formated()
 
     def is_empty(self):
@@ -46,7 +68,8 @@ class Proposed(Frame):
 
     def is_valid(self):
         if self.first_instalment.get() and self.else_instalment.get():
-            return BRLString(self.first_instalment.get()).is_valid() and BRLString(self.else_instalment.get()).is_valid()
+            return BRLString(self.first_instalment.get()).is_valid() and \
+                   BRLString(self.else_instalment.get()).is_valid()
         else:
             return BRLString(self.first_instalment.get()).is_valid()
 

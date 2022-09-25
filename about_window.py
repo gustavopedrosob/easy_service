@@ -10,4 +10,3 @@ class AboutWindow(Toplevel):
         self.withdraw()
         self.protocol("WM_DELETE_WINDOW", self.withdraw)
         Label(self, text="Programa desenvolvido por Gustavo Pedroso Bernardes\nVersão: 1.0").pack()
-

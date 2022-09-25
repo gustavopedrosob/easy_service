@@ -10,6 +10,7 @@ class InstalmentString:
 
     def get_formated(self) -> str:
         if self.first_instalment and self.times and self.else_instalment:
-            return "{} + {}x {}".format(self.first_instalment.get_formated(), self.times, self.else_instalment.get_formated())
+            return "{} + {}x {}".format(self.first_instalment.get_formated(), self.times,
+                                        self.else_instalment.get_formated())
         else:
             return self.first_instalment.get_formated()

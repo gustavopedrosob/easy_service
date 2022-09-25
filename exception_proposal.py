@@ -1,11 +1,9 @@
-import locale
-import re
-from datetime import datetime, timedelta
-from tkinter import Tk, Label, Entry, Button, W, Menu, Toplevel, END, Spinbox, E, IntVar, Frame, StringVar, LEFT, X
+from tkinter import Tk, Label, Entry, Button, W, Menu, END, Spinbox, E, IntVar, Frame, StringVar, LEFT, X
 from tkinter.ttk import Combobox
+
 from pyperclip import copy
 
-from DplusX import DplusX
+from d_plus_x import DplusX
 from about_window import AboutWindow
 from brl_string import BRLString
 from cpf_string import CPFString
@@ -21,7 +19,6 @@ class ExceptionProposalWindow:
         self.timesvariable = IntVar(value=1)
         product = StringVar(value="Cbrcrel")
         self.datevariable = IntVar(value=1)
-        self.datevariable.trace("w", self.on_date_change)
         self.window.title("Proposta de exceção")
         self.window.resizable(False, False)
         self.about_window = AboutWindow()
@@ -29,52 +26,208 @@ class ExceptionProposalWindow:
         menu.add_command(label="Sobre", command=self.about_window.deiconify)
         self.window.configure(menu=menu)
         validate_cpf = self.window.register(lambda string: CPFString(string).is_valid_for_input()), "%P"
-        validate_delayed_days = self.window.register(lambda string: IntegerString(string).is_valid_for_input(1000, 0)), "%P"
+        validate_delayed_days = self.window.register(
+            lambda string: IntegerString(string).is_valid_for_input(1000, 0)), "%P"
         validate_phone_number = self.window.register(lambda string: PhoneString(string).is_valid_for_input()), "%P"
         validate_instalment = self.window.register(lambda string: BRLString(string).is_valid_for_input()), "%P"
-        validate_proposed_payment_date = self.window.register(lambda string: IntegerString(string).is_valid_for_input(6, 0)), "%P"
+        validate_proposed_payment_date = self.window.register(
+            lambda string: IntegerString(string).is_valid_for_input(6, 0)), "%P"
         validate_email = self.window.register(lambda string: EmailString(string).is_valid_for_input()), "%P"
+
         frame_1 = Frame()
-        frame_1.pack(padx=20, pady=20)
-        Label(master=frame_1, name="cpf_label", text="CPF").grid(row=0, column=0, sticky=W, pady=5, columnspan=2)
-        self.cpf = Entry(master=frame_1, validate="key", validatecommand=validate_cpf)
-        self.cpf.grid(row=0, column=2, columnspan=2, sticky=E)
-        Label(master=frame_1, name="product_label", text="Produto").grid(row=1, column=0, sticky=W, pady=5, columnspan=2)
-        self.product = Combobox(master=frame_1, values=("Cbrcrel", "Ccrcfi", "Epcfi"), state="readonly", width=10, textvariable=product)
-        self.product.grid(row=1, column=2, columnspan=2, sticky=E)
-        Label(master=frame_1, name="updated_value_label", text="Valor atualizado").grid(row=2, column=0, sticky=W, pady=5, columnspan=2)
-        self.updated_value = Entry(master=frame_1, validate="key", validatecommand=validate_instalment, width=10)
-        self.updated_value.grid(row=2, column=2, columnspan=2, sticky=E)
-        Label(master=frame_1, name="promotion_value_label", text="Valor com desconto").grid(row=3, column=0, sticky=W, pady=5)
-        self.promotion = Proposed(product, self.timesvariable, master=frame_1)
-        self.promotion.grid(row=3, column=1, columnspan=3, sticky=E)
-        Label(master=frame_1, name="delayed_days_label", text="Dias em atraso").grid(row=4, column=0, sticky=W, pady=5, columnspan=2)
-        self.delayed_days = Spinbox(master=frame_1, validate="key", validatecommand=validate_delayed_days, width=5, from_=1, to=999)
-        self.delayed_days.grid(row=4, column=2, columnspan=2, sticky=E)
-        Label(master=frame_1, name="proposed_payment_date_label", text="Data proposta para pagamento").grid(row=5, column=0, sticky=W,
-                                                                                            pady=5, columnspan=2)
-        self.date = Label(master=frame_1)
-        self.date.grid(row=5, column=2, sticky=E)
-        self.proposed_payment_date = Spinbox(master=frame_1, validate="key", validatecommand=validate_proposed_payment_date, width=5,
-                                             from_=1, to=5, textvariable=self.datevariable)
-        self.proposed_payment_date.grid(row=5, column=3, sticky=E)
-        Label(master=frame_1, name="proposed_payment_value_label", text="Valor proposto para pagamento").grid(row=6, column=0, sticky=W,
-                                                                                              pady=5)
-        self.proposed_payment = Proposed(product, self.timesvariable, master=frame_1)
-        self.proposed_payment.grid(row=6, column=1, columnspan=3, sticky=E)
-        Label(master=frame_1, name="phone_number_label", text="Telefone").grid(row=7, column=0, sticky=W, pady=5, columnspan=2)
-        self.phone_number = Entry(master=frame_1, validate="key", validatecommand=validate_phone_number)
-        self.phone_number.grid(row=7, column=2, columnspan=2, sticky=E)
-        Label(master=frame_1, name="email_address_label", text="E-mail").grid(row=8, column=0, sticky=W, pady=5)
-        self.email_address = Entry(master=frame_1, name="", validate="key", validatecommand=validate_email, width=35)
-        self.email_address.grid(row=8, column=1, columnspan=3, sticky=E)
+        frame_1.pack(
+            padx=20,
+            pady=20)
+        Label(
+            frame_1,
+            text="CPF").grid(
+            row=0,
+            column=0,
+            sticky=W,
+            pady=5,
+            columnspan=2)
+        self.cpf = Entry(
+            frame_1,
+            validate="key",
+            validatecommand=validate_cpf)
+        self.cpf.grid(
+            row=0,
+            column=2,
+            columnspan=2,
+            sticky=E)
+        Label(
+            frame_1,
+            text="Produto").grid(
+            row=1,
+            column=0,
+            sticky=W,
+            pady=5,
+            columnspan=2)
+        self.product = Combobox(
+            frame_1,
+            values=("Cbrcrel", "Ccrcfi", "Epcfi"),
+            state="readonly",
+            width=10,
+            textvariable=product)
+        self.product.grid(
+            row=1,
+            column=2,
+            columnspan=2,
+            sticky=E)
+        Label(
+            frame_1,
+            text="Valor atualizado").grid(
+            row=2,
+            column=0,
+            sticky=W,
+            pady=5,
+            columnspan=2)
+        self.updated_value = Entry(
+            frame_1,
+            validate="key",
+            validatecommand=validate_instalment,
+            width=10)
+        self.updated_value.grid(
+            row=2,
+            column=2,
+            columnspan=2,
+            sticky=E)
+        Label(
+            frame_1,
+            text="Valor com desconto").grid(
+            row=3,
+            column=0,
+            sticky=W,
+            pady=5)
+        self.promotion = Proposed(
+            product,
+            self.timesvariable,
+            master=frame_1)
+        self.promotion.grid(
+            row=3,
+            column=1,
+            columnspan=3,
+            sticky=E)
+        Label(
+            frame_1,
+            text="Dias em atraso").grid(
+            row=4,
+            column=0,
+            sticky=W,
+            pady=5,
+            columnspan=2)
+        self.delayed_days = Spinbox(
+            master=frame_1,
+            validate="key",
+            validatecommand=validate_delayed_days,
+            width=5,
+            from_=1,
+            to=999)
+        self.delayed_days.grid(
+            row=4,
+            column=2,
+            columnspan=2,
+            sticky=E)
+        Label(
+            frame_1,
+            text="Data proposta para pagamento").grid(
+            row=5,
+            column=0,
+            sticky=W,
+            pady=5,
+            columnspan=2)
+        self.date = Label(
+            frame_1)
+        self.date.grid(
+            row=5,
+            column=2,
+            sticky=E)
+        self.proposed_payment_date = Spinbox(
+            master=frame_1,
+            validate="key",
+            validatecommand=validate_proposed_payment_date,
+            width=5,
+            from_=1,
+            to=5,
+            textvariable=self.datevariable)
+        self.proposed_payment_date.grid(
+            row=5,
+            column=3,
+            sticky=E)
+        Label(
+            frame_1,
+            text="Valor proposto para pagamento").grid(
+            row=6,
+            column=0,
+            sticky=W,
+            pady=5)
+        self.proposed_payment = Proposed(
+            product,
+            self.timesvariable,
+            master=frame_1)
+        self.proposed_payment.grid(
+            row=6,
+            column=1,
+            columnspan=3,
+            sticky=E)
+        Label(
+            frame_1,
+            text="Telefone").grid(
+            row=7,
+            column=0,
+            sticky=W,
+            pady=5,
+            columnspan=2)
+        self.phone_number = Entry(
+            frame_1,
+            validate="key",
+            validatecommand=validate_phone_number)
+        self.phone_number.grid(
+            row=7,
+            column=2,
+            columnspan=2,
+            sticky=E)
+        Label(
+            frame_1,
+            text="E-mail").grid(
+            row=8,
+            column=0,
+            sticky=W,
+            pady=5)
+        self.email_address = Entry(
+            frame_1,
+            validate="key",
+            validatecommand=validate_email,
+            width=35)
+        self.email_address.grid(
+            row=8,
+            column=1,
+            columnspan=3,
+            sticky=E)
         frame_2 = Frame()
         frame_2.pack()
-        Button(master=frame_2, name="copy", text="Copiar", command=self.copy).pack(side=LEFT, fill=X, expand=1, padx=40)
-        Button(master=frame_2, name="reset", text="Redefinir", command=self.reset).pack(side=LEFT, fill=X, expand=1, padx=40)
+        Button(
+            master=frame_2,
+            text="Copiar",
+            command=self.copy).pack(
+            side=LEFT,
+            fill=X,
+            expand=1,
+            padx=40)
+        Button(
+            master=frame_2,
+            text="Redefinir",
+            command=self.reset).pack(
+            side=LEFT,
+            fill=X,
+            expand=1,
+            padx=40)
         self.log = Label()
-        self.log.pack(side=LEFT)
+        self.log.pack(
+            side=LEFT
+        )
         self.apply_default_values()
+        self.datevariable.trace("w", lambda *args: self.on_date_change())
         self.window.mainloop()
 
     def set_log(self, something: str):
@@ -84,9 +237,9 @@ class ExceptionProposalWindow:
     def apply_default_values(self):
         self.product.current(0)
 
-    def on_date_change(self, *args):
-        if date := self.datevariable.get():
-            self.date.config(text=DplusX(date).get_date_formated())
+    def on_date_change(self):
+        if date := self.proposed_payment_date.get():
+            self.date.config(text=DplusX(int(date)).get_date_formated())
 
     def copy(self):
         if not (cpf := self.cpf.get()):

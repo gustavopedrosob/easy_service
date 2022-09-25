@@ -10,7 +10,8 @@ class BRLString:
 
     def is_valid_for_input(self):
         if self.string:
-            compiled = re.compile(r"^(([1-9]\d{2}|[1-9]\d|[1-9])\.?\d{0,3}((?<=\d{3})(,\d{0,2}))?|([1-9]\d{2}|[1-9]\d|\d)(,\d{0,2})?)$")
+            compiled = re.compile(
+                r"^(([1-9]\d{2}|[1-9]\d|[1-9])\.?\d{0,3}((?<=\d{3})(,\d{0,2}))?|([1-9]\d{2}|[1-9]\d|\d)(,\d{0,2})?)$")
             return bool(compiled.match(self.string))
         else:
             return True
@@ -24,4 +25,3 @@ class BRLString:
 
     def to_float(self):
         return float(self.string.replace(".", "").replace(",", "."))
-
