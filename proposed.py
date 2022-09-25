@@ -56,6 +56,12 @@ class Proposed(Frame):
         else:
             return True
 
+    def is_valid(self):
+        if self.first_instalment.get() and self.else_instalment.get():
+            return BRLString(self.first_instalment.get()).is_valid() and BRLString(self.else_instalment.get()).is_valid()
+        else:
+            return BRLString(self.first_instalment.get()).is_valid()
+
     def reset(self):
         self.first_instalment.delete(0, END)
         self.else_instalment.delete(0, END)

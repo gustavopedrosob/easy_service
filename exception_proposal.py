@@ -97,20 +97,32 @@ class ExceptionProposalWindow:
     def copy(self):
         if not (cpf := self.cpf.get()):
             self.set_log("Lembre-se de preencher o campo de CPF.")
+        elif not CPFString(cpf).is_valid():
+            self.set_log("Digite um CPF valido.")
         elif not (updated_value := self.updated_value.get()):
             self.set_log("Lembre-se de preencher o campo de valor atualizado.")
+        elif not BRLString(updated_value).is_valid():
+            self.set_log("Digite um valor atualizado valido.")
         elif self.promotion.is_empty():
             self.set_log("Lembre-se de preencher o campo de valor com desconto.")
+        elif not self.promotion.is_valid():
+            self.set_log("Digite um valor com desconto valido.")
         elif not (delayed_days := self.delayed_days.get()):
             self.set_log("Lembre-se de preencher os dias em atraso.")
-        elif not (proposed_payment_date := self.proposed_payment_date.get()):
+        elif not (datevariable := self.datevariable.get()):
             self.set_log("Lembre-se de preencher o campo de data proposta para pagamento.")
+        elif not self.proposed_payment.is_valid():
+            self.set_log("Digite um valor proposto para pagamento valido.")
         elif self.proposed_payment.is_empty():
             self.set_log("Lembre-se de preencher o campo de valor proposto para pagamento.")
         elif not (phone_number := self.phone_number.get()):
             self.set_log("Lembre-se de preencher o campo de telefone.")
+        elif not PhoneString(phone_number).is_valid():
+            self.set_log("Digite um telefone valido.")
         elif not (email_address := self.email_address.get()):
             self.set_log("Lembre-se de preencher o campo de e-mail.")
+        elif not EmailString(email_address).is_valid():
+            self.set_log("Digite um e-mail valido.")
         else:
             lines = (
                 f'CPF: {CPFString(cpf).get_formated()}',
@@ -118,7 +130,7 @@ class ExceptionProposalWindow:
                 f'Valor atualizado: {BRLString(updated_value).get_formated()}',
                 f'Valor com desconto: {self.promotion.get_instalment_formated()}',
                 f'Dias em atraso: {delayed_days}',
-                f'Data proposta para pagamento: {DplusX(self.datevariable.get()).get_date_formated()}',
+                f'Data proposta para pagamento: {DplusX(datevariable).get_date_formated()}',
                 f'Proposta para pagamento: {"À vista" if self.timesvariable.get() == 1 else "Parcelamento"}',
                 f'Valor proposto para pagamento: {self.proposed_payment.get_instalment_formated()}',
                 f'Telefone: {PhoneString(phone_number).get_formated()}',
