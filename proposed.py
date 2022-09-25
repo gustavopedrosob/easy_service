@@ -44,15 +44,15 @@ class Proposed(Frame):
 
     def on_product_variable_change(self):
         if self.productvariable.get() == "Cbrcrel":
-            self.times.config(from_=1, to=24)
+            self.times.config(from_=1, to=23)
         else:
-            self.times.config(from_=1, to=18)
+            self.times.config(from_=1, to=17)
 
     def validate_times(self, something: str):
         if self.productvariable.get() == "Cbrcrel":
-            return IntegerString(something).is_valid_for_input(25, 0)
+            return IntegerString(something).is_valid_for_input(24, 0)
         else:
-            return IntegerString(something).is_valid_for_input(19, 0)
+            return IntegerString(something).is_valid_for_input(18, 0)
 
     def get_instalment_formated(self):
         instalment_string = InstalmentString(BRLString(self.first_instalment.get()), int(self.timesvariable.get()),
