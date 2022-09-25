@@ -5,6 +5,7 @@ from tkinter.ttk import Combobox
 from pyperclip import copy
 
 from brl_string import BRLString
+from cpf_string import CPFString
 from proposed import Proposed, validate_max_and_min_value_for_integer_string
 
 
@@ -25,7 +26,7 @@ class ExceptionProposalWindow:
         menu = Menu(self.window)
         menu.add_command(label="Sobre", command=self.about_window.deiconify)
         self.window.configure(pady=10, padx=10, menu=menu)
-        validate_cpf = self.window.register(self.validate_cpf), "%P"
+        validate_cpf = self.window.register(lambda string: CPFString(string).is_valid_for_input()), "%P"
         validate_delayed_days = self.window.register(self.validate_delayed_days), "%P"
         validate_phone_number = self.window.register(self.validate_phone_number), "%P"
         validate_instalment = self.window.register(lambda string: BRLString(string).is_valid_for_input()), "%P"
@@ -74,13 +75,6 @@ class ExceptionProposalWindow:
         self.log.config(text=something)
         self.window.after(5000, lambda: self.log.config(text=""))
 
-    @staticmethod
-    def validate_cpf(something: str):
-        if (something.isdigit() and len(something) < 12) or len(something) == 0:
-            return True
-        else:
-            return False
-
     def apply_default_values(self):
         self.product.current(0)
 
@@ -127,7 +121,7 @@ class ExceptionProposalWindow:
             self.set_log("Lembre-se de preencher o campo de e-mail.")
         else:
             lines = (
-                f'CPF: {cpf}',
+                f'CPF: {CPFString(cpf).get_formated()}',
                 f'Produto: {self.product.get()}',
                 f'Valor atualizado: {BRLString(updated_value).get_formated()}',
                 f'Valor com desconto: {self.promotion.get_instalment_formated()}',
