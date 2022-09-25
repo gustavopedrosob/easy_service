@@ -6,6 +6,7 @@ from pyperclip import copy
 
 from brl_string import BRLString
 from cpf_string import CPFString
+from phone_str import PhoneString
 from proposed import Proposed, validate_max_and_min_value_for_integer_string
 
 
@@ -28,7 +29,7 @@ class ExceptionProposalWindow:
         self.window.configure(pady=10, padx=10, menu=menu)
         validate_cpf = self.window.register(lambda string: CPFString(string).is_valid_for_input()), "%P"
         validate_delayed_days = self.window.register(self.validate_delayed_days), "%P"
-        validate_phone_number = self.window.register(self.validate_phone_number), "%P"
+        validate_phone_number = self.window.register(lambda string: PhoneString(string).is_valid_for_input()), "%P"
         validate_instalment = self.window.register(lambda string: BRLString(string).is_valid_for_input()), "%P"
         validate_proposed_payment_date = self.window.register(self.validate_proposed_payment_date), "%P"
         validate_email = self.window.register(self.validate_email), "%P"
@@ -129,7 +130,7 @@ class ExceptionProposalWindow:
                 f'Data proposta para pagamento: D+{proposed_payment_date}',
                 f'Proposta para pagamento: {"À vista" if self.timesvariable.get() == 1 else "Parcelamento"}',
                 f'Valor proposto para pagamento: {self.proposed_payment.get_instalment_formated()}',
-                f'Telefone: {phone_number}',
+                f'Telefone: {PhoneString(phone_number).get_formated()}',
                 f'E-mail: {email_address}'
             )
             copy("\n".join(lines))
