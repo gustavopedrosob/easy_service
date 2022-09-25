@@ -6,6 +6,7 @@ from tkinter.ttk import Combobox
 from pyperclip import copy
 
 from DplusX import DplusX
+from about_window import AboutWindow
 from brl_string import BRLString
 from cpf_string import CPFString
 from phone_str import PhoneString
@@ -15,19 +16,13 @@ from proposed import Proposed, validate_max_and_min_value_for_integer_string
 class ExceptionProposalWindow:
     def __init__(self):
         self.window = Tk()
-        self.about_window = Toplevel()
-        self.about_window.title("Sobre")
-        self.about_window.configure(padx=20, pady=30)
-        self.about_window.resizable(False, False)
-        self.about_window.withdraw()
-        self.about_window.protocol("WM_DELETE_WINDOW", self.about_window.withdraw)
         self.timesvariable = IntVar(value=1)
         product = StringVar(value="Cbrcrel")
         self.datevariable = IntVar(value=1)
         self.datevariable.trace("w", self.on_date_change)
-        Label(self.about_window, text="Programa desenvolvido por Gustavo Pedroso Bernardes\nVersão: 1.0").pack()
         self.window.title("Proposta de exceção")
         self.window.resizable(False, False)
+        self.about_window = AboutWindow()
         menu = Menu(self.window)
         menu.add_command(label="Sobre", command=self.about_window.deiconify)
         self.window.configure(menu=menu)
