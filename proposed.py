@@ -6,18 +6,6 @@ from brl_string import BRLString
 from instalment_string import InstalmentString
 
 
-def validate_max_and_min_value_for_integer_string(something: str, max_: int, min_: int):
-    if something.isdigit():
-        if max_ > int(something) > min_:
-            return True
-        else:
-            return False
-    elif something:
-        return False
-    else:
-        return True
-
-
 class Proposed(Frame):
     def __init__(self, productvariable, timesvariable, **kwargs):
         super().__init__(**kwargs)

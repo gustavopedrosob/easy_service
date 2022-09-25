@@ -10,8 +10,9 @@ from about_window import AboutWindow
 from brl_string import BRLString
 from cpf_string import CPFString
 from email_string import EmailString
+from integer_string import IntegerString
 from phone_str import PhoneString
-from proposed import Proposed, validate_max_and_min_value_for_integer_string
+from proposed import Proposed
 
 
 class ExceptionProposalWindow:
@@ -28,10 +29,10 @@ class ExceptionProposalWindow:
         menu.add_command(label="Sobre", command=self.about_window.deiconify)
         self.window.configure(menu=menu)
         validate_cpf = self.window.register(lambda string: CPFString(string).is_valid_for_input()), "%P"
-        validate_delayed_days = self.window.register(self.validate_delayed_days), "%P"
+        validate_delayed_days = self.window.register(lambda string: IntegerString(string).is_valid_for_input(1000, 0)), "%P"
         validate_phone_number = self.window.register(lambda string: PhoneString(string).is_valid_for_input()), "%P"
         validate_instalment = self.window.register(lambda string: BRLString(string).is_valid_for_input()), "%P"
-        validate_proposed_payment_date = self.window.register(self.validate_proposed_payment_date), "%P"
+        validate_proposed_payment_date = self.window.register(lambda string: IntegerString(string).is_valid_for_input(6, 0)), "%P"
         validate_email = self.window.register(lambda string: EmailString(string).is_valid_for_input()), "%P"
         frame_1 = Frame()
         frame_1.pack(padx=20, pady=20)
@@ -84,15 +85,8 @@ class ExceptionProposalWindow:
         self.product.current(0)
 
     def on_date_change(self, *args):
-        self.date.config(text=DplusX(self.datevariable.get()).get_date_formated())
-
-    @staticmethod
-    def validate_proposed_payment_date(something: str):
-        return validate_max_and_min_value_for_integer_string(something, 6, 0)
-
-    @staticmethod
-    def validate_delayed_days(something: str):
-        return validate_max_and_min_value_for_integer_string(something, 999, 0)
+        if date := self.datevariable.get():
+            self.date.config(text=DplusX(date).get_date_formated())
 
     def copy(self):
         if not (cpf := self.cpf.get()):
