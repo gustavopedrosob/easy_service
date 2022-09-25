@@ -3,6 +3,7 @@ from tkinter import Frame, Entry, Spinbox, END, E
 import re
 
 from brl_string import BRLString
+from instalment_string import InstalmentString
 
 
 def validate_max_and_min_value_for_integer_string(something: str, max_: int, min_: int):
@@ -45,10 +46,8 @@ class Proposed(Frame):
             return validate_max_and_min_value_for_integer_string(something, 19, 0)
 
     def get_instalment_formated(self):
-        if all((self.first_instalment.get(), self.times.get(), self.else_instalment.get())):
-            return "{} + {}x {}".format(BRLString(self.first_instalment.get()).get_formated(), self.timesvariable.get(), BRLString(self.else_instalment.get()).get_formated())
-        else:
-            return "{}".format(BRLString(self.first_instalment.get()).get_formated())
+        instalment_string = InstalmentString(BRLString(self.first_instalment.get()), int(self.timesvariable.get()), BRLString(self.else_instalment.get()))
+        return instalment_string.get_formated()
 
     def is_empty(self):
         if all((self.first_instalment.get(), self.times.get(),
