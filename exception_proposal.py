@@ -1,5 +1,6 @@
 import locale
 import re
+from datetime import datetime, timedelta
 from tkinter import Tk, Label, Entry, Button, W, Menu, Toplevel, END, Spinbox, E, IntVar, Frame, StringVar, LEFT, X
 from tkinter.ttk import Combobox
 from pyperclip import copy
@@ -21,6 +22,8 @@ class ExceptionProposalWindow:
         self.about_window.protocol("WM_DELETE_WINDOW", self.about_window.withdraw)
         self.timesvariable = IntVar(value=1)
         product = StringVar(value="Cbrcrel")
+        self.datevariable = IntVar(value=1)
+        self.datevariable.trace("w", self.on_date_change)
         Label(self.about_window, text="Programa desenvolvido por Gustavo Pedroso Bernardes\nVersão: 1.0").pack()
         self.window.title("Proposta de exceção")
         self.window.resizable(False, False)
@@ -50,9 +53,11 @@ class ExceptionProposalWindow:
         self.delayed_days.grid(row=4, column=2, columnspan=2, sticky=E)
         Label(name="proposed_payment_date_label", text="Data proposta para pagamento").grid(row=5, column=0, sticky=W,
                                                                                             pady=5, columnspan=2)
+        self.date = Label(text=(datetime.now() + timedelta(days=1)).strftime("(%d/%m/%Y)"))
+        self.date.grid(row=5, column=2, sticky=E)
         self.proposed_payment_date = Spinbox(validate="key", validatecommand=validate_proposed_payment_date, width=5,
-                                             from_=1, to=5)
-        self.proposed_payment_date.grid(row=5, column=2, columnspan=2, sticky=E)
+                                             from_=1, to=5, textvariable=self.datevariable)
+        self.proposed_payment_date.grid(row=5, column=3, sticky=E)
         Label(name="proposed_payment_value_label", text="Valor proposto para pagamento").grid(row=6, column=0, sticky=W,
                                                                                               pady=5)
         self.proposed_payment = Proposed(product, self.timesvariable)
@@ -78,6 +83,9 @@ class ExceptionProposalWindow:
 
     def apply_default_values(self):
         self.product.current(0)
+
+    def on_date_change(self, *args):
+        self.date.config(text=(datetime.now() + timedelta(days=self.datevariable.get())).strftime("(%d/%m/%Y)"))
 
     @staticmethod
     def validate_proposed_payment_date(something: str):
