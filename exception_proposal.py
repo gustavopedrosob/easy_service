@@ -88,14 +88,6 @@ class ExceptionProposalWindow:
         return validate_max_and_min_value_for_integer_string(something, 999, 0)
 
     @staticmethod
-    def validate_phone_number(something: str):
-        matched = re.match(r"(?:\(\d{2,3}\)|\d{2,3}) +\d{4,5}-?\d{4}", something)
-        if matched or len(something) == 0:
-            return True
-        else:
-            return False
-
-    @staticmethod
     def validate_email(something: str):
         matched = re.match(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+", something)
         if matched or len(something) == 0:
