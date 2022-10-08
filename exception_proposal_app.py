@@ -68,7 +68,7 @@ class ExceptionProposalWindow(Tk):
         frame_1 = Frame()
         frame_1.pack(
             padx=20,
-            pady=20
+            pady=10
         )
         Label(
             frame_1,
@@ -264,7 +264,9 @@ class ExceptionProposalWindow(Tk):
             sticky=E
         )
         frame_2 = Frame()
-        frame_2.pack()
+        frame_2.pack(
+            pady=10
+        )
         self.copy = Button(
             master=frame_2,
             text="Copiar"
@@ -285,9 +287,14 @@ class ExceptionProposalWindow(Tk):
             expand=1,
             padx=40
         )
-        self.log = Label()
+        self.log = Label(
+            background="white",
+            anchor=W
+        )
         self.log.pack(
-            side=LEFT
+            side=LEFT,
+            expand=1,
+            fill=X
         )
 
     def set_log(self, something: str):

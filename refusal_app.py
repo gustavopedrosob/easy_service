@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from tkinter import Tk, Button, Label, Text, END, W, Menu, Toplevel, E
+from tkinter import Tk, Button, Label, Text, END, W, Menu, Toplevel, E, Frame, X
 from tkinter.ttk import Treeview, Combobox
 from typing import Optional
 
@@ -144,20 +144,21 @@ class RefusalWindow(Tk):
         super(RefusalWindow, self).__init__(*args, **kwargs)
         self.title("Tabulação recusa")
         self.menu = Menu(self)
-        self.configure(
-            padx=10,
-            pady=10,
-            menu=self.menu
-        )
+        self.configure(menu=self.menu)
         self.resizable(False, False)
-        self.proposals = ProposalsTreeView(self)
+        frame = Frame()
+        frame.pack(
+            padx=15,
+            pady=10
+        )
+        self.proposals = ProposalsTreeView(frame)
         self.proposals.grid(
             row=0,
             column=0,
             columnspan=3
         )
         Label(
-            self,
+            frame,
             name="label_refusal_reason",
             text="Motivo da recusa"
         ).grid(
@@ -167,7 +168,7 @@ class RefusalWindow(Tk):
             pady=5
         )
         self.preset_refusal_reason = Combobox(
-            self,
+            frame,
             values=("Desemprego", "Doença", "Terceiro vai negociar", "Nega-se a ouvir", "Nega-se a pagar")
         )
         self.preset_refusal_reason.grid(
@@ -176,7 +177,7 @@ class RefusalWindow(Tk):
             sticky=E
         )
         self.refusal_reason = Text(
-            self,
+            frame,
             width=50,
             height=4
         )
@@ -186,7 +187,7 @@ class RefusalWindow(Tk):
             columnspan=3
         )
         self.copy_button = Button(
-            self,
+            frame,
             text="Copiar"
         )
         self.copy_button.grid(
@@ -198,7 +199,7 @@ class RefusalWindow(Tk):
             padx=20
         )
         self.add = Button(
-            self,
+            frame,
             text="Adicionar"
         )
         self.add.grid(
@@ -207,7 +208,7 @@ class RefusalWindow(Tk):
             columnspan=3
         )
         self.reset_button = Button(
-            self,
+            frame,
             text="Redefinir"
         )
         self.reset_button.grid(
@@ -218,12 +219,14 @@ class RefusalWindow(Tk):
             padx=20,
             sticky=E
         )
-        self.log = Label(self)
-        self.log.grid(
-            row=4,
-            column=0,
-            columnspan=3,
-            sticky=W
+        self.log = Label(
+            self,
+            background="white",
+            anchor=W
+        )
+        self.log.pack(
+            expand=1,
+            fill=X
         )
         self.preset_refusal_reason.bind("<<ComboboxSelected>>", lambda args_: self.on_set_preset_refusal_reason())
 
