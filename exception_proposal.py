@@ -1,301 +1,257 @@
-from tkinter import Tk, Label, Entry, Button, W, Menu, END, Spinbox, E, IntVar, Frame, StringVar, LEFT, X
-from tkinter.ttk import Combobox
+import re
+from datetime import datetime, timedelta
+from tkinter import StringVar
+from typing import Optional
 
-from pyperclip import copy
-
-from d_plus_x import DplusX
-from about_window import AboutWindow
-from brl_string import BRLString
-from cpf_string import CPFString
-from email_string import EmailString
-from integer_string import IntegerString
-from phone_str import PhoneString
-from proposed import Proposed
+from common.constants import CBRCREL, IN_CASH, INSTALLMENT
+from common.tk_util import StrVar, IntStr, BRLVar
 
 
-class ExceptionProposalWindow:
-    def __init__(self):
-        self.window = Tk()
-        self.timesvariable = IntVar(value=1)
-        product = StringVar(value="Cbrcrel")
-        self.datevariable = IntVar(value=1)
-        self.window.title("Proposta de exceção")
-        self.window.resizable(False, False)
-        self.about_window = AboutWindow()
-        menu = Menu(self.window)
-        menu.add_command(label="Sobre", command=self.about_window.deiconify)
-        self.window.configure(menu=menu)
-        validate_cpf = self.window.register(lambda string: CPFString(string).is_valid_for_input()), "%P"
-        validate_delayed_days = self.window.register(
-            lambda string: IntegerString(string).is_valid_for_input(1000, 0)), "%P"
-        validate_phone_number = self.window.register(lambda string: PhoneString(string).is_valid_for_input()), "%P"
-        validate_instalment = self.window.register(lambda string: BRLString(string).is_valid_for_input()), "%P"
-        validate_proposed_payment_date = self.window.register(
-            lambda string: IntegerString(string).is_valid_for_input(6, 0)), "%P"
-        validate_email = self.window.register(lambda string: EmailString(string).is_valid_for_input()), "%P"
+class NoKind(Exception):
+    pass
 
-        frame_1 = Frame()
-        frame_1.pack(
-            padx=20,
-            pady=20)
-        Label(
-            frame_1,
-            text="CPF").grid(
-            row=0,
-            column=0,
-            sticky=W,
-            pady=5,
-            columnspan=2)
-        self.cpf = Entry(
-            frame_1,
-            validate="key",
-            validatecommand=validate_cpf)
-        self.cpf.grid(
-            row=0,
-            column=2,
-            columnspan=2,
-            sticky=E)
-        Label(
-            frame_1,
-            text="Produto").grid(
-            row=1,
-            column=0,
-            sticky=W,
-            pady=5,
-            columnspan=2)
-        self.product = Combobox(
-            frame_1,
-            values=("Cbrcrel", "Ccrcfi", "Epcfi"),
-            state="readonly",
-            width=10,
-            textvariable=product)
-        self.product.grid(
-            row=1,
-            column=2,
-            columnspan=2,
-            sticky=E)
-        Label(
-            frame_1,
-            text="Valor atualizado").grid(
-            row=2,
-            column=0,
-            sticky=W,
-            pady=5,
-            columnspan=2)
-        self.updated_value = Entry(
-            frame_1,
-            validate="key",
-            validatecommand=validate_instalment,
-            width=10)
-        self.updated_value.grid(
-            row=2,
-            column=2,
-            columnspan=2,
-            sticky=E)
-        Label(
-            frame_1,
-            text="Valor com desconto").grid(
-            row=3,
-            column=0,
-            sticky=W,
-            pady=5)
-        self.promotion = Proposed(
-            product,
-            self.timesvariable,
-            master=frame_1)
-        self.promotion.grid(
-            row=3,
-            column=1,
-            columnspan=3,
-            sticky=E)
-        Label(
-            frame_1,
-            text="Dias em atraso").grid(
-            row=4,
-            column=0,
-            sticky=W,
-            pady=5,
-            columnspan=2)
-        self.delayed_days = Spinbox(
-            master=frame_1,
-            validate="key",
-            validatecommand=validate_delayed_days,
-            width=5,
-            from_=1,
-            to=999)
-        self.delayed_days.grid(
-            row=4,
-            column=2,
-            columnspan=2,
-            sticky=E)
-        Label(
-            frame_1,
-            text="Data proposta para pagamento").grid(
-            row=5,
-            column=0,
-            sticky=W,
-            pady=5,
-            columnspan=2)
-        self.date = Label(
-            frame_1)
-        self.date.grid(
-            row=5,
-            column=2,
-            sticky=E)
-        self.proposed_payment_date = Spinbox(
-            master=frame_1,
-            validate="key",
-            validatecommand=validate_proposed_payment_date,
-            width=5,
-            from_=1,
-            to=5,
-            textvariable=self.datevariable)
-        self.proposed_payment_date.grid(
-            row=5,
-            column=3,
-            sticky=E)
-        Label(
-            frame_1,
-            text="Valor proposto para pagamento").grid(
-            row=6,
-            column=0,
-            sticky=W,
-            pady=5)
-        self.proposed_payment = Proposed(
-            product,
-            self.timesvariable,
-            master=frame_1)
-        self.proposed_payment.grid(
-            row=6,
-            column=1,
-            columnspan=3,
-            sticky=E)
-        Label(
-            frame_1,
-            text="Telefone").grid(
-            row=7,
-            column=0,
-            sticky=W,
-            pady=5,
-            columnspan=2)
-        self.phone_number = Entry(
-            frame_1,
-            validate="key",
-            validatecommand=validate_phone_number)
-        self.phone_number.grid(
-            row=7,
-            column=2,
-            columnspan=2,
-            sticky=E)
-        Label(
-            frame_1,
-            text="E-mail").grid(
-            row=8,
-            column=0,
-            sticky=W,
-            pady=5)
-        self.email_address = Entry(
-            frame_1,
-            validate="key",
-            validatecommand=validate_email,
-            width=35)
-        self.email_address.grid(
-            row=8,
-            column=1,
-            columnspan=3,
-            sticky=E)
-        frame_2 = Frame()
-        frame_2.pack()
-        Button(
-            master=frame_2,
-            text="Copiar",
-            command=self.copy).pack(
-            side=LEFT,
-            fill=X,
-            expand=1,
-            padx=40)
-        Button(
-            master=frame_2,
-            text="Redefinir",
-            command=self.reset).pack(
-            side=LEFT,
-            fill=X,
-            expand=1,
-            padx=40)
-        self.log = Label()
-        self.log.pack(
-            side=LEFT
-        )
-        self.apply_default_values()
-        self.datevariable.trace("w", lambda *args: self.on_date_change())
-        self.window.mainloop()
 
-    def set_log(self, something: str):
-        self.log.config(text=something)
-        self.window.after(5000, lambda: self.log.config(text=""))
+class Email(StrVar):
+    def is_valid_for_input(self) -> bool:
+        return self.is_text_valid_for_input(self.get())
 
-    def apply_default_values(self):
-        self.product.current(0)
+    @staticmethod
+    def is_text_valid_for_input(text: str):
+        if text:
+            compiled = re.compile(r"^[A-Za-z0-9.\-_]+(@[A-Za-z0-9]*)?(\.[A-Za-z]*)*$")
+            return bool(compiled.match(text))
+        else:
+            return True
 
-    def on_date_change(self):
-        if date := self.proposed_payment_date.get():
-            self.date.config(text=DplusX(int(date)).get_date_formated())
+    def is_valid(self) -> bool:
+        compiled = re.compile(r"^([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+$")
+        return bool(compiled.match(self.get()))
+
+    def validate(self):
+        if not self.is_valid():
+            raise ValueError("Entrada para e-mail inválida.")
+
+
+class UpdatedValue(BRLVar):
+    def validate(self):
+        if not self.is_valid():
+            raise ValueError("Entrada para valor atualizado inválida.")
+
+
+class Product(StrVar):
+    def get_max_instalments(self):
+        if self.get() == CBRCREL:
+            return 23
+        else:
+            return 17
+
+    def validate(self):
+        if self.is_empty():
+            raise ValueError("Entrada para produto não preenchida.")
+
+
+class Instalments(IntStr):
+    def is_valid(self, max_: Optional[int] = 24, min_: Optional[int] = 0, product: Optional[Product] = None):
+        if product:
+            return super().is_valid(product.get_max_instalments(), min_)
+        else:
+            return super().is_valid(max_, min_)
+
+    def get_kind(self):
+        if self.get() == 0 or self.is_empty():
+            return IN_CASH
+        else:
+            return INSTALLMENT
+
+    def validate(self):
+        if not self.is_valid():
+            raise ValueError("Entrada para quantidade de parcelas inválida.")
 
     def copy(self):
-        if not (cpf := self.cpf.get()):
-            self.set_log("Lembre-se de preencher o campo de CPF.")
-        elif not CPFString(cpf).is_valid():
-            self.set_log("Digite um CPF valido.")
-        elif not (updated_value := self.updated_value.get()):
-            self.set_log("Lembre-se de preencher o campo de valor atualizado.")
-        elif not BRLString(updated_value).is_valid():
-            self.set_log("Digite um valor atualizado valido.")
-        elif self.promotion.is_empty():
-            self.set_log("Lembre-se de preencher o campo de valor com desconto.")
-        elif not self.promotion.is_valid():
-            self.set_log("Digite um valor com desconto valido.")
-        elif not (delayed_days := self.delayed_days.get()):
-            self.set_log("Lembre-se de preencher os dias em atraso.")
-        elif not (datevariable := self.datevariable.get()):
-            self.set_log("Lembre-se de preencher o campo de data proposta para pagamento.")
-        elif not self.proposed_payment.is_valid():
-            self.set_log("Digite um valor proposto para pagamento valido.")
-        elif self.proposed_payment.is_empty():
-            self.set_log("Lembre-se de preencher o campo de valor proposto para pagamento.")
-        elif not (phone_number := self.phone_number.get()):
-            self.set_log("Lembre-se de preencher o campo de telefone.")
-        elif not PhoneString(phone_number).is_valid():
-            self.set_log("Digite um telefone valido.")
-        elif not (email_address := self.email_address.get()):
-            self.set_log("Lembre-se de preencher o campo de e-mail.")
-        elif not EmailString(email_address).is_valid():
-            self.set_log("Digite um e-mail valido.")
+        return Instalments(value=self.get())
+
+
+class Proposed:
+    def __init__(self, first_instalment: BRLVar, instalments: Instalments, else_instalment: BRLVar):
+        self.first_instalment = first_instalment
+        self.instalments = instalments
+        self.else_instalment = else_instalment
+
+    def get_formated(self, date: Optional[datetime] = None) -> str:
+        if self.get_kind() == INSTALLMENT:
+            text = "{} + {}x {}".format(self.first_instalment.get_formated(), self.instalments.get(),
+                                        self.else_instalment.get_formated())
         else:
-            lines = (
-                f'CPF: {CPFString(cpf).get_formated()}',
-                f'Produto: {self.product.get()}',
-                f'Valor atualizado: {BRLString(updated_value).get_formated()}',
-                f'Valor com desconto: {self.promotion.get_instalment_formated()}',
-                f'Dias em atraso: {delayed_days}',
-                f'Data proposta para pagamento: {DplusX(datevariable).get_date_formated()}',
-                f'Proposta para pagamento: {"À vista" if self.timesvariable.get() == 1 else "Parcelamento"}',
-                f'Valor proposto para pagamento: {self.proposed_payment.get_instalment_formated()}',
-                f'Telefone: {PhoneString(phone_number).get_formated()}',
-                f'E-mail: {email_address}'
-            )
-            copy("\n".join(lines))
+            text = self.first_instalment.get_formated()
+        if date:
+            return f"{text} até {date.strftime('%d/%m')};"
+        else:
+            return text
+
+    def is_valid(self, product: Optional[StringVar] = None) -> bool:
+        try:
+            kind = self.get_kind()
+        except NoKind:
+            return False
+        else:
+            if kind == INSTALLMENT:
+                return self.first_instalment.is_valid() and self.instalments.is_valid(product=product) and \
+                       self.else_instalment.is_valid()
+            else:
+                return self.first_instalment.is_valid()
+
+    def is_empty(self):
+        return self.first_instalment.is_empty() and self.instalments.is_empty() and self.else_instalment.is_empty()
 
     def reset(self):
-        for object_ in (self.cpf, self.updated_value, self.phone_number, self.email_address):
-            object_.delete(0, END)
-        self.promotion.reset()
-        self.proposed_payment.reset()
-        self.timesvariable.set(1)
-        self.apply_default_values()
-        for object_ in (self.delayed_days, self.proposed_payment_date):
-            object_.delete(0, END)
-            object_.insert(0, "1")
+        self.first_instalment.reset()
+        self.instalments.reset()
+        self.else_instalment.reset()
+
+    def get_values_formated(self):
+        if self.first_instalment.get() and self.instalments.get() and self.else_instalment.get():
+            return self.first_instalment.get_formated(), self.instalments.get(), self.else_instalment.get_formated()
+        elif self.first_instalment.get():
+            return self.first_instalment.get_formated(),
+        else:
+            raise NoKind("Proposta sem tipo!")
+
+    def get_kind(self):
+        if self.first_instalment.get() and self.instalments.get() and self.else_instalment.get():
+            return INSTALLMENT
+        elif self.first_instalment.get():
+            return IN_CASH
+        else:
+            raise NoKind("Proposta sem tipo!")
+
+    def copy(self):
+        return Proposed(self.first_instalment.copy(), self.instalments.copy(), self.else_instalment.copy())
+
+    def update(self, proposed):
+        self.first_instalment.set(proposed.first_instalment.get())
+        self.instalments.set(proposed.instalments.get())
+        self.else_instalment.set(proposed.else_instalment.get())
+
+    def validate(self, product: Optional[StringVar] = None):
+        if self.is_empty():
+            raise ValueError("Entrada para valor proposto não preenchido.")
+        if not self.is_valid(product):
+            raise ValueError("Entrada para valor proposto inválida.")
 
 
-if __name__ == '__main__':
-    ExceptionProposalWindow()
+class Promotion(Proposed):
+    def validate(self, product: Optional[StringVar] = None):
+        if self.is_empty():
+            raise ValueError("Entrada para proposta com desconto não preenchida.")
+        if not self.is_valid(product):
+            raise ValueError("Entrada para proposta com desconto inválida.")
+
+
+class Delayed(IntStr):
+    def validate(self):
+        if self.is_empty():
+            raise ValueError("Entrada para dias em atraso não preenchida.")
+
+
+class ExceptionProposal:
+    def __init__(self, master):
+        self.cpf = CPF(master)
+        self.d_plus = Dplus(master)
+        self.updated_value = UpdatedValue(master)
+        self.instalments = Instalments(master)
+        self.promotion = Promotion(BRLVar(master), self.instalments, BRLVar(master))
+        self.proposed = Proposed(BRLVar(master), self.instalments, BRLVar(master))
+        self.email = Email(master)
+        self.delayed = Delayed(master)
+        self.product = Product(master)
+        self.phone = Phone(master)
+
+    def get_text_to_copy(self):
+        lines = (
+            f'CPF: {self.cpf.get_formated()}',
+            f'Produto: {self.product.get()}',
+            f'Valor atualizado: {self.updated_value.get_formated()}',
+            f'Valor com desconto: {self.promotion.get_formated()}',
+            f'Dias em atraso: {self.delayed.get()}',
+            f'Data proposta para pagamento: {self.d_plus.get_date_formated()}',
+            f'Proposta para pagamento: {self.instalments.get_kind()}',
+            f'Valor proposto para pagamento: {self.proposed.get_formated()}',
+            f'Telefone: {self.phone.get_formated()}',
+            f'E-mail: {self.email.get()}'
+        )
+        return "\n".join(lines)
+
+    def get_vars(self):
+        return (self.cpf, self.d_plus, self.updated_value, self.instalments, self.promotion, self.proposed, self.email,
+                self.delayed, self.product, self.phone)
+
+    def validate(self):
+        for object_ in self.get_vars():
+            object_.validate()
+
+    def reset(self):
+        for object_ in self.get_vars():
+            object_.reset()
+
+
+class Dplus(IntStr):
+    def get_date_formated(self) -> str:
+        return self.get_date().strftime("%d/%m/%Y")
+
+    def get_date(self) -> datetime:
+        return datetime.now() + timedelta(days=int(self.get()))
+
+    def validate(self):
+        if self.is_empty():
+            raise ValueError("Entrada para data proposta para pagamento não preenchida.")
+
+
+class CPF(StrVar):
+    def is_valid(self) -> bool:
+        compiled = re.compile(r"^(\d)(?!\1{10}|\1{2}\.\1{3}\.\1{3}-\1{2})(\d{10}|\d{2}\.\d{3}\.\d{3}-\d{2})$")
+        return bool(compiled.match(self.get()))
+
+    def is_valid_for_input(self) -> bool:
+        return self.is_text_valid_for_input(self.get())
+
+    @staticmethod
+    def is_text_valid_for_input(text: str):
+        compiled = re.compile(
+            r"^(\d{0,11}|\d{0,3}((?<=\d{3})\.\d{0,3}((?<=\d{3}\.\d{3})\.\d{0,3}((?<=\d{3}\.\d{3}.\d{3})-\d{0,2})?)?)?)$"
+        )
+        return bool(compiled.match(text))
+
+    def get_formated(self) -> str:
+        compiled = re.compile(r"(\d{3})\.?(\d{3})\.?(\d{3})-?(\d{2})")
+        return compiled.sub(r"\1.\2.\3-\4", self.get())
+
+    def validate(self):
+        if not self.is_valid():
+            raise ValueError("Entrada para CPF inválida.")
+
+
+class Phone(StrVar):
+    def is_valid_for_input(self) -> str:
+        return self.is_text_valid_for_input(self.get())
+
+    @staticmethod
+    def is_text_valid_for_input(text: str):
+        if text:
+            compiled = re.compile(r"^\(?([14689][1-9]?|2[12478]?|3[1234578]?|5[1345]?|7[13457]?)?"
+                                  r"((?<=\(\d{2}))?\)?\s{0,2}9?\s?\d{0,4}[\s-]?\d{0,4}$")
+            return bool(compiled.match(text))
+        else:
+            return True
+
+    def is_valid(self) -> str:
+        compiled = re.compile(
+            r"^\(?([14689][1-9]|2[12478]|3[1234578]|5[1345]|7[13457])((?<=\(\d{2}))?\)?\s{0,2}9?\s?\d{4}[\s-]?\d{4}$")
+        return bool(compiled.match(self.get()))
+
+    def get_formated(self) -> str:
+        compiled = re.compile(r"^\(?(\d{2})\)?\s{0,2}(9?)\s?(\d{4})[\s-]?(\d{4})$")
+        return compiled.sub(r"(\1) \2\3-\4", self.get())
+
+    def validate(self):
+        if not self.is_valid():
+            raise ValueError("Entrada para telefone inválida.")
