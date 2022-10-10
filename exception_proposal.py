@@ -1,10 +1,36 @@
 import re
 from datetime import datetime, timedelta
+from sqlite3 import connect, PARSE_DECLTYPES
 from tkinter import StringVar
 from typing import Optional
 
 from common.constants import CBRCREL, IN_CASH, INSTALLMENT
 from common.tk_util import StrVar, IntStr, BRLVar
+from json import load, dump
+
+
+class Config:
+    def __init__(self, **kwargs):
+        self.save_on_copy = kwargs["save_on_copy"]
+
+    @staticmethod
+    def load():
+        try:
+            file = open("config.json", "r")
+        except FileNotFoundError:
+            file = open("config.json", "w+")
+            config = Config(save_on_copy=True)
+            dump(config.__dict__, file)
+            file.close()
+            return config
+        else:
+            content = load(file)
+            file.close()
+            return Config(**content)
+
+    def save(self):
+        with open("config.json", "w") as file:
+            dump(self.__dict__, file)
 
 
 class NoKind(Exception):
@@ -221,9 +247,16 @@ class CPF(StrVar):
         )
         return bool(compiled.match(text))
 
-    def get_formated(self) -> str:
+    def get_formated(self, pretty: bool = True):
+        return self.get_text_formated(self.get(), pretty)
+
+    @staticmethod
+    def get_text_formated(text: str, pretty: bool = True) -> str:
         compiled = re.compile(r"(\d{3})\.?(\d{3})\.?(\d{3})-?(\d{2})")
-        return compiled.sub(r"\1.\2.\3-\4", self.get())
+        if pretty:
+            return compiled.sub(r"\1.\2.\3-\4", text)
+        else:
+            return compiled.sub(r"\1\2\3\4", text)
 
     def validate(self):
         if not self.is_valid():
@@ -255,3 +288,30 @@ class Phone(StrVar):
     def validate(self):
         if not self.is_valid():
             raise ValueError("Entrada para telefone inválida.")
+
+
+class Historic:
+    def __init__(self):
+        self.sqlite_connection = connect("historic.db", detect_types=PARSE_DECLTYPES)
+        self.cursor = self.sqlite_connection.cursor()
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS historic (
+        cpf char(11) PRIMARY KEY,
+        date timestamp NOT NULL)""")
+        self.sqlite_connection.commit()
+
+    def add_exception_proposal(self, proposal: ExceptionProposal, date: datetime):
+        self.cursor.execute("INSERT INTO historic (cpf, date) VALUES (?, ?)", (proposal.cpf.get_formated(False), date))
+        self.sqlite_connection.commit()
+
+    def get_historic(self):
+        self.cursor.execute("SELECT * FROM historic;")
+        return self.cursor.fetchall()
+
+    def delete_old_historic(self):
+        self.cursor.execute("SELECT * FROM historic;")
+        for cpf, date in self.cursor.fetchall():
+            timedelta_ = datetime.now() - date
+            if timedelta_ > timedelta(days=31):
+                self.cursor.execute("DELETE FROM historic WHERE cpf=?", (cpf,))
+        self.sqlite_connection.commit()

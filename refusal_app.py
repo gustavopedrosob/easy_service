@@ -21,10 +21,6 @@ class ProposalsTreeView(Treeview):
             selectmode="browse",
             **kwargs
         )
-        self.popup = Menu(
-            self,
-            tearoff=False
-        )
         self.column(
             "first_instalment",
             width=150
@@ -49,35 +45,6 @@ class ProposalsTreeView(Treeview):
             "else_instalments",
             text="Valor das parcelas"
         )
-        self.unbind_class("Treeview", "<Button-1>")
-        self.bind("<Button-3>", self.do_popup)
-        self.bind("<Button-1>", self.on_click)
-        self.bind("<Motion>", "break")
-
-    def on_click(self, event):
-        self.focus_set()
-        try:
-            selected = self.selection()[0]
-        except IndexError:
-            selected = None
-        row_clicked = self.identify_row(event.y)
-        if selected:
-            if selected == row_clicked:
-                self.selection_remove(row_clicked)
-            else:
-                self.selection_set(row_clicked)
-        else:
-            self.selection_set(row_clicked)
-
-    def do_popup(self, event):
-        try:
-            selected = self.selection()[0]
-        except IndexError:
-            pass
-        else:
-            _, selected_y, _, selected_height = self.bbox(selected)
-            if selected_y < event.y < selected_y + selected_height:
-                self.popup.post(event.x_root, event.y_root)
 
     def insert_proposal(self, proposed: Proposed, key: Optional[str] = None) -> str:
         if key:

@@ -1,13 +1,49 @@
 import locale
 import re
-from tkinter import Spinbox as _Spinbox, StringVar
+from tkinter import Spinbox as _Spinbox, StringVar, Menu
 from tkinter import Entry as _Entry
+from tkinter.ttk import Treeview as _Treeview
 from typing import Optional
 
 from pyperclip import paste
 
 
 locale.setlocale(locale.LC_MONETARY, 'pt_BR.UTF-8')
+
+
+class Treeview(_Treeview):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.popup = Menu(self, tearoff=False)
+        self.unbind_class("Treeview", "<Button-1>")
+        self.bind("<Button-1>", self.__on_click)
+        self.bind("<Button-3>", self.__do_popup)
+        self.bind("<Motion>", "break")
+
+    def __do_popup(self, event):
+        try:
+            selected = self.selection()[0]
+        except IndexError:
+            pass
+        else:
+            _, selected_y, _, selected_height = self.bbox(selected)
+            if selected_y < event.y < selected_y + selected_height:
+                self.popup.post(event.x_root, event.y_root)
+
+    def __on_click(self, event):
+        self.focus_set()
+        try:
+            selected = self.selection()[0]
+        except IndexError:
+            selected = None
+        row_clicked = self.identify_row(event.y)
+        if selected:
+            if selected == row_clicked:
+                self.selection_remove(row_clicked)
+            else:
+                self.selection_set(row_clicked)
+        else:
+            self.selection_set(row_clicked)
 
 
 class _EasyControlV:
