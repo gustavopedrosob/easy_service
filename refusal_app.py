@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 from tkinter import Tk, Button, Label, Text, END, W, Menu, Toplevel, E, Frame, X
-from tkinter.ttk import Treeview, Combobox
+from tkinter.ttk import Combobox
 from typing import Optional
 
 from pyperclip import copy
 
 from common.about_window import AboutWindow
-from common.tk_util import BRLVar
+from common.tk_util import BRLVar, Treeview
 from common.proposed import ProposedBox
 from refusal import Proposals
 from exception_proposal import Proposed, NoKind, Instalments
@@ -116,7 +116,7 @@ class RefusalWindow(Tk):
         frame = Frame()
         frame.pack(
             padx=15,
-            pady=10
+            pady=(10, 0)
         )
         self.proposals = ProposalsTreeView(frame)
         self.proposals.grid(
