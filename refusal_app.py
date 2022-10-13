@@ -6,6 +6,7 @@ from typing import Optional
 from pyperclip import copy
 
 from common.about_window import AboutWindow
+from common.constants import REFUSAL_REASONS
 from common.tk_util import BRLVar, Treeview
 from common.proposed import ProposedBox
 from refusal import Proposals
@@ -136,7 +137,7 @@ class RefusalWindow(Tk):
         )
         self.preset_refusal_reason = Combobox(
             frame,
-            values=("Desemprego", "Doença", "Terceiro vai negociar", "Nega-se a ouvir", "Nega-se a pagar")
+            values=tuple(REFUSAL_REASONS.keys())
         )
         self.preset_refusal_reason.grid(
             row=1,
@@ -202,15 +203,8 @@ class RefusalWindow(Tk):
         self.after(5000, lambda: self.log.config(text=""))
 
     def on_set_preset_refusal_reason(self):
-        presets = {
-            "Desemprego": "O cliente está desempregado, portanto não pode negociar.",
-            "Doença": "O cliente está doente, portanto não pode negociar.",
-            "Terceiro vai negociar": "O cliente não quer negociar, pois informa que um terceiro irá negociar.",
-            "Nega-se a ouvir": "O cliente não quis ouvir as propostas.",
-            "Nega-se a pagar": "O cliente nega-se a pagar o débito."
-        }
         self.refusal_reason.delete("0.0", END)
-        self.refusal_reason.insert("0.0", presets[self.preset_refusal_reason.get()])
+        self.refusal_reason.insert("0.0", REFUSAL_REASONS[self.preset_refusal_reason.get()])
 
 
 class RefusalApp:
