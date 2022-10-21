@@ -42,19 +42,19 @@ class HistoricTreeView(Treeview):
     def on_copy(self):
         selected = self.selection()
         item = self.item(selected)
-        cpf = CPF.get_text_formated(item["values"][0], False)
+        cpf = CPF.get_text_formatted(item["values"][0], False)
         return copy(cpf)
 
     def add_exception_proposal_by(self, cpf: str, date: str):
         self.insert('', END, values=[cpf, date])
 
     def add_exception_proposal(self, proposal: ExceptionProposal, date: datetime):
-        self.insert('', END, values=[proposal.cpf.get_formated(), date.strftime("%d/%m")])
+        self.insert('', END, values=[proposal.cpf.get_formatted(), date.strftime("%d/%m")])
 
     def insert_saved_historic(self, historic: Historic):
         _historic = historic.get_historic()
         for cpf, date in _historic:
-            self.add_exception_proposal_by(CPF.get_text_formated(cpf), date.strftime("%d/%m"))
+            self.add_exception_proposal_by(CPF.get_text_formatted(cpf), date.strftime("%d/%m"))
 
 
 class HistoricWindow(Toplevel):
@@ -159,7 +159,7 @@ class ExceptionProposalApp:
         if self.exception_proposal.d_plus.is_empty():
             self.window.date.config(text="")
         else:
-            self.window.date.config(text=self.exception_proposal.d_plus.get_date_formated())
+            self.window.date.config(text=self.exception_proposal.d_plus.get_date_formatted())
 
     def on_product_change(self):
         self.window.proposed.update_validate(self.exception_proposal.product)

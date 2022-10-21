@@ -6,7 +6,7 @@ from typing import Optional
 from pyperclip import copy
 
 from common.about_window import AboutWindow
-from common.constants import REFUSAL_REASONS
+from common.constants import REFUSAL_REASONS, FIRST_PROPOSAL_DAYS_FOR_PAYMENT, ELSE_PROPOSALS_DAYS_FOR_PAYMENT
 from common.tk_util import BRLVar, Treeview
 from common.proposed import ProposedBox
 from refusal import Proposals
@@ -49,10 +49,10 @@ class ProposalsTreeView(Treeview):
 
     def insert_proposal(self, proposed: Proposed, key: Optional[str] = None) -> str:
         if key:
-            self.item(key, values=proposed.get_values_formated())
+            self.item(key, values=proposed.get_values_formatted())
             return key
         else:
-            return self.insert("", END, values=proposed.get_values_formated())
+            return self.insert("", END, values=proposed.get_values_formatted())
 
     def remove_proposal(self, key):
         self.delete(key)
@@ -285,10 +285,10 @@ class RefusalApp:
         key = self.window.proposals.get_key_from_selected()
         proposed = self.proposals.get_proposal(key)
         if self.proposals.index(proposed) == 0:
-            date = datetime.now() + timedelta(days=1)
+            date = datetime.now() + timedelta(days=FIRST_PROPOSAL_DAYS_FOR_PAYMENT)
         else:
-            date = datetime.now() + timedelta(days=4)
-        copy(proposed.get_formated(date))
+            date = datetime.now() + timedelta(days=ELSE_PROPOSALS_DAYS_FOR_PAYMENT)
+        copy(proposed.get_formatted(date))
 
     def on_control_c_pressed(self):
         if self.window.proposals.get_key_from_selected() is not None:

@@ -103,12 +103,12 @@ class Proposed:
         self.instalments = instalments
         self.else_instalment = else_instalment
 
-    def get_formated(self, date: Optional[datetime] = None) -> str:
+    def get_formatted(self, date: Optional[datetime] = None) -> str:
         if self.get_kind() == INSTALLMENT:
-            text = "{} + {}x {}".format(self.first_instalment.get_formated(), self.instalments.get(),
-                                        self.else_instalment.get_formated())
+            text = "{} + {}x {}".format(self.first_instalment.get_formatted(), self.instalments.get(),
+                                        self.else_instalment.get_formatted())
         else:
-            text = self.first_instalment.get_formated()
+            text = self.first_instalment.get_formatted()
         if date:
             return f"{text} até {date.strftime('%d/%m')};"
         else:
@@ -134,11 +134,11 @@ class Proposed:
         self.instalments.reset()
         self.else_instalment.reset()
 
-    def get_values_formated(self):
+    def get_values_formatted(self):
         if self.first_instalment.get() and self.instalments.get() and self.else_instalment.get():
-            return self.first_instalment.get_formated(), self.instalments.get(), self.else_instalment.get_formated()
+            return self.first_instalment.get_formatted(), self.instalments.get(), self.else_instalment.get_formatted()
         elif self.first_instalment.get():
-            return self.first_instalment.get_formated(),
+            return self.first_instalment.get_formatted(),
         else:
             raise NoKind("Proposta sem tipo!")
 
@@ -182,7 +182,7 @@ class Delayed(IntStr):
 class ExceptionProposal:
     def __init__(self, master):
         self.cpf = CPF(master)
-        self.d_plus = Dplus(master)
+        self.d_plus = DPlus(master)
         self.updated_value = UpdatedValue(master)
         self.instalments = Instalments(master)
         self.promotion = Promotion(BRLVar(master), self.instalments, BRLVar(master))
@@ -194,15 +194,15 @@ class ExceptionProposal:
 
     def get_text_to_copy(self):
         lines = (
-            f'CPF: {self.cpf.get_formated()}',
+            f'CPF: {self.cpf.get_formatted()}',
             f'Produto: {self.product.get()}',
-            f'Valor atualizado: {self.updated_value.get_formated()}',
-            f'Valor com desconto: {self.promotion.get_formated()}',
+            f'Valor atualizado: {self.updated_value.get_formatted()}',
+            f'Valor com desconto: {self.promotion.get_formatted()}',
             f'Dias em atraso: {self.delayed.get()}',
-            f'Data proposta para pagamento: {self.d_plus.get_date_formated()}',
+            f'Data proposta para pagamento: {self.d_plus.get_date_formatted()}',
             f'Proposta para pagamento: {self.instalments.get_kind()}',
-            f'Valor proposto para pagamento: {self.proposed.get_formated()}',
-            f'Telefone: {self.phone.get_formated()}',
+            f'Valor proposto para pagamento: {self.proposed.get_formatted()}',
+            f'Telefone: {self.phone.get_formatted()}',
             f'E-mail: {self.email.get()}'
         )
         return "\n".join(lines)
@@ -220,8 +220,8 @@ class ExceptionProposal:
             object_.reset()
 
 
-class Dplus(IntStr):
-    def get_date_formated(self) -> str:
+class DPlus(IntStr):
+    def get_date_formatted(self) -> str:
         return self.get_date().strftime("%d/%m/%Y")
 
     def get_date(self) -> datetime:
@@ -247,11 +247,11 @@ class CPF(StrVar):
         )
         return bool(compiled.match(text))
 
-    def get_formated(self, pretty: bool = True):
-        return self.get_text_formated(self.get(), pretty)
+    def get_formatted(self, pretty: bool = True):
+        return self.get_text_formatted(self.get(), pretty)
 
     @staticmethod
-    def get_text_formated(text: str, pretty: bool = True) -> str:
+    def get_text_formatted(text: str, pretty: bool = True) -> str:
         compiled = re.compile(r"(\d{3})\.?(\d{3})\.?(\d{3})-?(\d{2})")
         if pretty:
             return compiled.sub(r"\1.\2.\3-\4", text)
@@ -281,7 +281,7 @@ class Phone(StrVar):
             r"^\(?([14689][1-9]|2[12478]|3[1234578]|5[1345]|7[13457])((?<=\(\d{2}))?\)?\s{0,2}9?\s?\d{4}[\s-]?\d{4}$")
         return bool(compiled.match(self.get()))
 
-    def get_formated(self) -> str:
+    def get_formatted(self) -> str:
         compiled = re.compile(r"^\(?(\d{2})\)?\s{0,2}(9?)\s?(\d{4})[\s-]?(\d{4})$")
         return compiled.sub(r"(\1) \2\3-\4", self.get())
 
@@ -301,7 +301,7 @@ class Historic:
         self.sqlite_connection.commit()
 
     def add_exception_proposal(self, proposal: ExceptionProposal, date: datetime):
-        self.cursor.execute("INSERT INTO historic (cpf, date) VALUES (?, ?)", (proposal.cpf.get_formated(False), date))
+        self.cursor.execute("INSERT INTO historic (cpf, date) VALUES (?, ?)", (proposal.cpf.get_formatted(False), date))
         self.sqlite_connection.commit()
 
     def get_historic(self):

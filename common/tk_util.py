@@ -117,7 +117,7 @@ class BRLVar(StrVar):
         compiled = re.compile(r"^(([1-9]\d{2}|[1-9]\d|[1-9])\.?\d{3}|([1-9]\d{2}|[1-9]\d|\d))(,\d{1,2})?$")
         return bool(compiled.match(self.get()))
 
-    def get_formated(self) -> str:
+    def get_formatted(self) -> str:
         return locale.currency(self.to_float(), grouping=True)
 
     def to_float(self):

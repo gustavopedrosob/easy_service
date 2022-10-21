@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from common.constants import FIRST_PROPOSAL_DAYS_FOR_PAYMENT, ELSE_PROPOSALS_DAYS_FOR_PAYMENT
 from exception_proposal import Proposed
 
 
@@ -24,10 +25,11 @@ class Proposals:
 
     def get_text_to_copy(self):
         as_tuple = self.as_tuple()
-        proposals_formated = [as_tuple[0].get_formated((datetime.now() + timedelta(days=1)))]
+        now = datetime.now()
+        proposals_formatted = [as_tuple[0].get_formatted(now + timedelta(days=FIRST_PROPOSAL_DAYS_FOR_PAYMENT))]
         for proposed in as_tuple[1:]:
-            proposals_formated.append(proposed.get_formated((datetime.now() + timedelta(days=4))))
-        return "\n".join(proposals_formated)
+            proposals_formatted.append(proposed.get_formatted(now + timedelta(days=ELSE_PROPOSALS_DAYS_FOR_PAYMENT)))
+        return "\n".join(proposals_formatted)
 
     def as_tuple(self):
         return tuple(self.proposals.values())
