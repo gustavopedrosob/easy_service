@@ -1,0 +1,6 @@
+HIGHLIGHT = "light grey"
+WHITE = "#FDFFFC"
+BLUE = "#235789"
+RED = "#C1292E"
+YELLOW = "#F1D302"
+BLACK = "#161925"
