@@ -1,5 +1,8 @@
 import locale
 import re
+import typing
+
+from common import converter
 
 
 def format_phone(phone: str) -> str:
@@ -14,5 +17,7 @@ def format_cpf(cpf: str, pretty: bool = True) -> str:
         return compiled.sub(r"\1\2\3\4", cpf)
 
 
-def format_brl(brl: float, symbol: bool = True) -> str:
+def format_brl(brl: typing.Union[float, str], symbol: bool = True) -> str:
+    if isinstance(brl, str):
+        brl = converter.brl_to_float(brl)
     return locale.currency(brl, symbol, True)

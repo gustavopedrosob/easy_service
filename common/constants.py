@@ -11,6 +11,12 @@ MAX_INSTALMENTS = {CBRCREL: CBRCREL_MAX_INSTALMENTS,
                    CCRCFI: CCRCFI_MAX_INSTALMENTS,
                    EPCFI: EPCFI_MAX_INSTALMENTS}
 
+PAYED = 0
+PROMISE = 1
+CANCELED = 2
+OVERDUE = 3
+ACTIVE = 4
+
 CANCEL_IN_DAYS = 10
 
 INSTALLMENT = "Parcelado"
@@ -29,27 +35,3 @@ REFUSAL_REASONS = {
     "Nega-se a pagar": "O cliente nega-se a pagar o débito.",
     "Fora de prazo": "O cliente pretende realizar o pagamento, porém o prazo não viabiliza uma negociação."
 }
-
-COUNTER_PROPOSAL = "Contra-Proposta"
-ADD = "Adicionar"
-EASY_SERVICE = "Atendimento fácil"
-CPF = "CPF"
-PHONE = "Telefone"
-EMAIL = "Email"
-PRODUCT = "Produto"
-DELAYED = "Dias em atraso"
-INSTALLMENTS = "Quantidade de parcelas"
-FIRST_INSTALLMENT = "Entrada"
-ELSE_INSTALLMENT = "Valor de parcelas"
-D_PLUS = "Prazo para pagamento em dias"
-DUE_DATE = "Vencimento"
-TOTAL = "Total"
-DISCOUNT = "Desconto sobre a ultima proposta"
-OPTIONS = "Opções"
-TOOLS = "Ferramentas"
-ABOUT = "Sobre"
-PAYED = "Pago"
-VALUE = "Valor"
-CREATE_DATE = "Data de criação"
-EXCEPTION_PROPOSAL_HISTORIC = "Histórico de propostas de exceção"
-AGREEMENT_CONTROL = "Controle de acordos"

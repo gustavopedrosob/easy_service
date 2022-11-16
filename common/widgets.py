@@ -6,7 +6,7 @@ from tkinter import ttk
 import typing
 from pyperclip import paste
 
-from common import colors, constants
+from common import colors
 
 locale.setlocale(locale.LC_MONETARY, 'pt_BR.UTF-8')
 
@@ -97,33 +97,26 @@ class Button(tk.Button):
         HoverText(self, hover_text)
 
 
-class Treeview(ttk.Treeview):
+class BrowseTreeview(ttk.Treeview):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.unbind_class("Treeview", "<Button-1>")
-        self.bind("<Button-1>", self.on_click)
+        super(BrowseTreeview, self).__init__(*args, selectmode="none", **kwargs)
+        self.bind("<Button-1>", self._on_click)
         self.context_menu_management = TreeviewContextMenuManagement(self)
         self.__binds = {}
 
-    def on_click(self, event):
-        self.focus_set()
-        try:
-            selected = self.selection()[0]
-        except IndexError:
-            selected = None
-        row_clicked = self.identify_row(event.y)
-        region_kind = self.identify_region(event.x, event.y)
-        if region_kind == "cell":
-            if selected == row_clicked:
-                self.selection_remove(row_clicked)
-                on_unselected = self.__binds.get("<OnUnselect>")
-                if on_unselected is not None:
-                    on_unselected(row_clicked)
+    def _on_click(self, event):
+        selection = self.selection()
+        row = self.identify_row(event.y)
+        region = self.identify_region(event.x, event.y)
+        if region == "cell":
+            if row in selection:
+                self.selection_remove(row)
+                command = self.__binds.get("<Unselect>")
             else:
-                self.selection_set(row_clicked)
-                on_select = self.__binds.get("<OnSelect>")
-                if on_select is not None:
-                    on_select(row_clicked)
+                self.selection_set(row)
+                command = self.__binds.get("<Select>")
+            if command is not None:
+                command(row)
 
     def own_bind(self, sequence, func) -> None:
         self.__binds[sequence] = func
