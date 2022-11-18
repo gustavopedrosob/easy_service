@@ -68,6 +68,10 @@ class ProposalWithDate(Proposal):
     def get_formatted_with_date(self) -> str:
         return f"{self.get_formatted()} até {self.due_date.strftime('%d/%m')};"
 
+    def to_agreement(self, cpf: str) -> agreement.Agreement:
+        today = datetime.date.today()
+        return agreement.Agreement(cpf, self.get_total(), today, (self.due_date - today).days)
+
 
 class ExceptionProposalSent:
     def __init__(self, cpf: str, value: float, create_date: datetime.date, d_plus: int,

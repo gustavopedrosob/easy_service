@@ -47,7 +47,8 @@ class HoverText:
     def __init__(self, widget, hover_text: typing.Optional[str] = None):
         self.widget = widget
         self.hover_text = hover_text
-        self.label = tk.Label(highlightthickness=1, highlightbackground=colors.HIGHLIGHT)
+        toplevel = self.widget.winfo_toplevel()
+        self.label = tk.Label(toplevel, highlightthickness=1, highlightbackground=colors.HIGHLIGHT)
         if self.hover_text:
             self.label.config(text=self.hover_text)
         self.place_timer: typing.Optional[threading.Timer] = None
@@ -60,9 +61,9 @@ class HoverText:
             self.place_timer.start()
 
     def routine(self):
-        root = self.widget.winfo_toplevel()
-        coord_x = root.winfo_pointerx() - root.winfo_rootx()
-        coord_y = root.winfo_pointery() - root.winfo_rooty() - 32
+        toplevel = self.widget.winfo_toplevel()
+        coord_x = toplevel.winfo_pointerx() - toplevel.winfo_rootx()
+        coord_y = toplevel.winfo_pointery() - toplevel.winfo_rooty() - 32
         self.place_hidden_text(coord_x, coord_y)
         timer = threading.Timer(3, self.hide_hidden_text)
         timer.start()
@@ -97,29 +98,51 @@ class Button(tk.Button):
         HoverText(self, hover_text)
 
 
-class BrowseTreeview(ttk.Treeview):
+class Treeview(ttk.Treeview):
+    def __init__(self, *args, **kwargs):
+        super(Treeview, self).__init__(*args, **kwargs)
+        self.bind("<Button-1>", self._on_click)
+        self.context_menu_management = TreeviewContextMenuManagement(self)
+        self._binds = {}
+        self.sorting_column = ""
+        self.reverse_sorting = False
+
+    def _on_click(self, event):
+        region = self.identify_region(event.x, event.y)
+        if region == "heading":
+            column = self.identify_column(event.x)
+            if column == self.sorting_column:
+                self.reverse_sorting = not self.reverse_sorting
+            else:
+                self.reverse_sorting = False
+                self.sorting_column = column
+            sort_command = self._binds.get("<Sort>")
+            if sort_command is not None:
+                sort_command(self.sorting_column, self.reverse_sorting)
+
+    def own_bind(self, sequence: str, func) -> None:
+        self._binds[sequence] = func
+
+
+class BrowseTreeview(Treeview):
     def __init__(self, *args, **kwargs):
         super(BrowseTreeview, self).__init__(*args, selectmode="none", **kwargs)
         self.bind("<Button-1>", self._on_click)
-        self.context_menu_management = TreeviewContextMenuManagement(self)
-        self.__binds = {}
 
     def _on_click(self, event):
+        super()._on_click(event)
         selection = self.selection()
         row = self.identify_row(event.y)
         region = self.identify_region(event.x, event.y)
         if region == "cell":
             if row in selection:
                 self.selection_remove(row)
-                command = self.__binds.get("<Unselect>")
+                command = self._binds.get("<Unselect>")
             else:
                 self.selection_set(row)
-                command = self.__binds.get("<Select>")
+                command = self._binds.get("<Select>")
             if command is not None:
                 command(row)
-
-    def own_bind(self, sequence, func) -> None:
-        self.__binds[sequence] = func
 
 
 class Placeholder:
@@ -206,3 +229,9 @@ class Entry(tk.Entry, Placeholder):
         self.bind("<Control-v>", _strip_content)
         HoverText(self, hover_text)
         Placeholder.__init__(self, self, placeholder, placeholder_color)
+
+
+class Combobox(ttk.Combobox):
+    def __init__(self, *args, hover_text: typing.Optional[str] = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        HoverText(self, hover_text)

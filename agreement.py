@@ -27,25 +27,13 @@ class Agreement:
     def is_overdue(self) -> bool:
         return (datetime.date.today() - self.get_due_date()).days > 0
 
-    def is_payed(self) -> bool:
-        return self.payed
-
-    def get_value(self) -> float:
-        return self.value
-
-    def get_create_date(self) -> datetime.date:
-        return self.create_date
-
-    def has_promise(self) -> bool:
-        return self.promise
-
     def is_active(self):
-        return not self.is_payed() and not self.is_overdue() and not self.is_cancelled()
+        return not self.payed and not self.is_overdue() and not self.is_cancelled()
 
     def get_state(self) -> int:
-        if self.is_payed():
+        if self.payed:
             return constants.PAYED
-        elif self.has_promise():
+        elif self.promise:
             return constants.PROMISE
         elif self.is_cancelled():
             return constants.CANCELED

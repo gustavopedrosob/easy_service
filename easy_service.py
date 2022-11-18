@@ -44,6 +44,11 @@ class Installments(widgets.Spinbox):
 
 
 class AgreementTreeView(widgets.BrowseTreeview):
+    SORTING_TABLE = {"#1": lambda agreement_: agreement_.cpf, "#2": lambda agreement_: agreement_.value,
+                     "#3": lambda agreement_: agreement_.create_date,
+                     "#4": lambda agreement_: agreement_.get_due_date(), "#5": lambda agreement_: agreement_.payed,
+                     "#6": lambda agreement_: agreement_.promise}
+
     def __init__(self, *args, **kwargs):
         cpf = "cpf"
         payed = "payed"
@@ -66,11 +71,15 @@ class AgreementTreeView(widgets.BrowseTreeview):
         self.heading(create_date, text="Data de criação")
         self.heading(due_date, text="Vencimento")
         self.heading(promise, text="Promessa")
-        self.sorting_config = {"column": "", "reverse": False}
         self.context_menu_management.context_menu_selected.add_command(label="Copiar CPF", command=self.on_copy_cpf)
+        self.own_bind("<Sort>", self.on_sort)
+
+    def on_sort(self, column: str, reverse: bool):
+        self.update_agreements(self.get_agreements(self.get_children()), sort_key=self.SORTING_TABLE[column],
+                               reverse_sort=reverse)
 
     def on_copy_cpf(self):
-        id_, agreement_ = self.get_agreements(self.selection()[0])
+        agreement_ = self.get_agreement(self.selection()[0])
         utils.copy_to_clipboard(self, formater.format_cpf(agreement_.cpf, False))
 
     def add_agreements(self, agreements: typing.Iterable[agreement.Agreement]):
@@ -96,30 +105,20 @@ class AgreementTreeView(widgets.BrowseTreeview):
                                          converter.str_to_bool(payed), converter.str_to_bool(promise), int(key))
         return agreement_
 
-    def on_click(self, event):
-        region = self.identify_region(event.x, event.y)
-        if region == "heading":
-            agreements = self.get_agreements(self.get_children())
-            keys = {"#2": agreement.Agreement.is_payed, "#3": agreement.Agreement.get_value,
-                    "#4": agreement.Agreement.get_create_date, "#5": agreement.Agreement.get_due_date}
-            column = self.identify_column(event.x)
-            if column in keys:
-                self.sorting_config["column"] = column
-                if column == self.sorting_config["column"]:
-                    self.sorting_config["reverse"] = not self.sorting_config["reverse"]
-                else:
-                    self.sorting_config["reverse"] = False
-                agreements.sort(key=keys[column], reverse=self.sorting_config["reverse"])
-                self.update_agreements(agreements)
-            else:
-                self.sorting_config["column"] = ""
-
-    def update_agreements(self, agreements: typing.Iterable[agreement.Agreement]) -> None:
+    def update_agreements(self, agreements: typing.Iterable[agreement.Agreement], state: typing.Optional[int] = None,
+                          sort_key: typing.Callable[[agreement.Agreement], typing.Any] = None,
+                          reverse_sort: bool = False) -> None:
         self.delete(*self.get_children())
+        if state is not None:
+            agreements = list(filter(lambda agreement_: agreement_.get_state() == state, agreements))
+        if sort_key is not None:
+            agreements.sort(key=sort_key, reverse=reverse_sort)
         self.add_agreements(agreements)
 
 
 class AgreementControlWindow:
+    STATES = ("Pago", "Promessa", "Cancelado", "Atrasado", "Ativo")
+
     def __init__(self, database_: database.DataBase):
         self.top_level = tk.Toplevel()
         self.top_level.minsize(800, 600)
@@ -132,7 +131,8 @@ class AgreementControlWindow:
         left_frame.pack(fill=tk.BOTH, side=tk.LEFT, expand=True)
         state_label_frame = ttk.LabelFrame(left_frame, text="Filtrar por estado")
         state_label_frame.pack(padx=10, pady=5, anchor=tk.W)
-        self.state = ttk.Combobox(state_label_frame, values=("Pago", "Promessa", "Cancelado", "Atrasado", "Ativo"))
+        self.state = ttk.Combobox(state_label_frame, values=("Nenhum", "Pago", "Promessa", "Cancelado", "Atrasado",
+                                                             "Ativo"))
         self.state.pack(padx=5, pady=5)
         self.historic = AgreementTreeView(left_frame)
         self.historic.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
@@ -183,20 +183,23 @@ class AgreementControlWindow:
     def on_set_agreement_as_promise(self, database_: database.DataBase):
         agreement_ = self.historic.get_agreement(self.historic.selection()[0])
         database_.set_agreement_as_promise(agreement_.id)
-        self.update(database_.get_agreement_historic())
+        self.update_agreements_with_context(database_)
 
     def on_set_agreement_as_payed(self, database_: database.DataBase):
         agreement_ = self.historic.get_agreement(self.historic.selection()[0])
         database_.set_agreement_as_payed(agreement_.id)
-        self.update(database_.get_agreement_historic())
+        self.update_agreements_with_context(database_)
 
     def on_select_state(self, database_: database.DataBase):
+        self.update_agreements_with_context(database_)
+
+    def update_agreements_with_context(self, database_: database.DataBase):
         agreements = database_.get_agreement_historic()
         state = self.state.get()
-        states = ["Pago", "Promessa", "Cancelado", "Atrasado", "Ativo"]
-        filtered_agreements = list(filter(lambda agreement_: agreement_.get_state() == states.index(state),
-                                          agreements))
-        self.update(filtered_agreements)
+        self.historic.update_agreements(agreements, self.STATES.index(state) if state in self.STATES else None,
+                                        self.historic.SORTING_TABLE.get(self.historic.sorting_column),
+                                        self.historic.reverse_sorting)
+        self.update_statistics(agreements)
 
     def on_select_period(self, database_: database.DataBase):
         agreements = database_.get_agreement_historic()
@@ -221,7 +224,7 @@ class AgreementControlWindow:
             return round(fraction / total * 100, 2)
 
         def get_agreements_sum(_agreements):
-            return sum(map(agreement.Agreement.get_value, _agreements))
+            return sum(map(lambda agreement_: agreement_.value, _agreements))
 
         def filter_agreements_by_state(_agreements, state: int):
             return tuple(filter(lambda agreement_: agreement_.get_state() == state, _agreements))
@@ -273,8 +276,7 @@ class AgreementControlWindow:
         agreement_selected = self.historic.get_agreement(selection)
         self.historic.delete(selection)
         database_.delete_agreement(agreement_selected.id)
-        agreements = self.historic.get_agreements(self.historic.get_children())
-        self.update_statistics(agreements)
+        self.update_statistics(database_.get_agreement_historic())
 
 
 class ExceptionProposalHistoricTreeView(widgets.BrowseTreeview):
@@ -339,9 +341,9 @@ class ExceptionProposalHistoricWindow:
         left_frame.pack(fill=tk.Y, side=tk.LEFT, padx=(0, 5))
         right_frame = ttk.LabelFrame(self.top_level, text="Histórico")
         right_frame.pack(fill=tk.BOTH, expand=True, side=tk.RIGHT)
-        self.counter_proposal = BRLEntry(left_frame, placeholder="Contra-Proposta")
+        self.counter_proposal = BRLEntry(left_frame, placeholder="Contra-Proposta", hover_text="Contra-Proposta")
         self.counter_proposal.pack(fill=tk.X, padx=5, pady=5)
-        self.installments = Installments(left_frame, placeholder="Parcelas")
+        self.installments = Installments(left_frame, placeholder="Parcelas", hover_text="Parcelas")
         self.installments.pack(fill=tk.X, padx=5)
         self.confirm = widgets.Button(left_frame, text="Confirmar", command=lambda: self.on_confirm(database_))
         self.confirm.pack(side=tk.BOTTOM, pady=10)
@@ -435,11 +437,12 @@ class ProposalsTreeView(widgets.BrowseTreeview):
 
 class Proposal:
     def __init__(self, master: tk.Widget, **kwargs):
-        self.installments = Installments(master, placeholder="Quantidade de parcelas")
+        self.installments = Installments(master, placeholder="Quantidade de parcelas",
+                                         hover_text="Quantidade de parcelas")
         self.installments.pack(fill=tk.X, pady=5, padx=5)
-        self.first_installment = BRLEntry(master, placeholder="Entrada")
+        self.first_installment = BRLEntry(master, placeholder="Entrada", hover_text="Entrada")
         self.first_installment.pack(fill=tk.X, pady=(0, 5), padx=5)
-        self.else_installments = BRLEntry(master, placeholder="Valor de parcelas")
+        self.else_installments = BRLEntry(master, placeholder="Valor de parcelas", hover_text="Valor de parcelas")
         self.else_installments.pack(fill=tk.X, pady=(0, 5), padx=5)
 
     def get_proposal(self) -> ep.Proposal:
@@ -460,6 +463,7 @@ class ProposalWithDate(Proposal):
         super().__init__(master, **kwargs)
         self.d_plus = widgets.Spinbox(
             master,
+            hover_text="Prazo para pagamento em dias",
             placeholder="Prazo para pagamento em dias",
             validate="key",
             validatecommand=d_plus_vc,
@@ -536,6 +540,7 @@ class EasyServiceWindow:
         costumer_label_frame.pack(ipadx=10, ipady=10, expand=True, fill=tk.BOTH)
         self.cpf = widgets.Entry(
             costumer_label_frame,
+            hover_text="CPF",
             placeholder="CPF",
             placeholder_color="grey",
             validate="key",
@@ -544,19 +549,22 @@ class EasyServiceWindow:
         self.cpf.pack(fill=tk.X, pady=5, padx=5)
         self.phone = widgets.Entry(
             costumer_label_frame,
+            hover_text="Telefone",
             placeholder="Telefone",
             validate="key",
             validatecommand=self.new_vc(lambda text: bool(regex.MAY_BE_PHONE.fullmatch(text)))
         )
         self.phone.pack(fill=tk.X, pady=(0, 5), padx=5)
-        self.email = widgets.Entry(costumer_label_frame, placeholder="Email")
+        self.email = widgets.Entry(costumer_label_frame, placeholder="Email", hover_text="Email")
         self.email.pack(fill=tk.X, pady=(0, 5), padx=5)
         debit_label_frame = ttk.LabelFrame(left_frame, text="Sobre o débito")
         debit_label_frame.pack(ipadx=10, ipady=10, expand=True, fill=tk.BOTH)
-        self.product = ttk.Combobox(debit_label_frame, textvariable=product_variable, values=constants.PRODUCTS)
+        self.product = widgets.Combobox(debit_label_frame, hover_text="Produto", textvariable=product_variable,
+                                        values=constants.PRODUCTS)
         self.product.pack(fill=tk.X, pady=5, padx=5)
         self.delay_days = widgets.Spinbox(
             master=debit_label_frame,
+            hover_text="Dias em atraso",
             placeholder="Dias em atraso",
             validate="key",
             validatecommand=self.new_vc(lambda string: validators.is_int_text_valid_for_input(string, 1000, 0)),
@@ -564,17 +572,18 @@ class EasyServiceWindow:
             to=999
         )
         self.delay_days.pack(fill=tk.X, pady=(0, 5), padx=5)
-        self.main_value = BRLEntry(debit_label_frame, placeholder="Valor principal")
+        self.main_value = BRLEntry(debit_label_frame, placeholder="Valor principal", hover_text="Valor principal")
         self.main_value.pack(fill=tk.X, pady=(0, 5), padx=5)
-        self.promotion = BRLEntry(debit_label_frame, placeholder="Valor com desconto")
+        self.promotion = BRLEntry(debit_label_frame, placeholder="Valor com desconto", hover_text="Valor com desconto")
         self.promotion.pack(fill=tk.X, pady=(0, 5), padx=5)
         proposes_frame = ttk.Frame(top_notebook)
         top_notebook.add(proposes_frame)
         top_notebook.tab(0, text="Propostas")
         self.proposals = ProposalsTreeView(proposes_frame)
         self.proposals.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.refusal_reason = ttk.Combobox(
+        self.refusal_reason = widgets.Combobox(
             proposes_frame,
+            hover_text="Motivo de recusa",
             values=tuple(constants.REFUSAL_REASONS.keys()),
             state="readonly"
         )
@@ -593,14 +602,28 @@ class EasyServiceWindow:
         self.select_overdue_debits.pack(padx=10, pady=5, side=tk.RIGHT, anchor=tk.SE)
         self.paste_debits = widgets.Button(debits_frame, text="Colar", command=self.on_paste_debits)
         self.paste_debits.pack(padx=10, pady=5, side=tk.RIGHT, anchor=tk.SE)
-        self.agreement = widgets.Button(bottom_frame, text="Acordo")
+        self.agreement = widgets.Button(
+            bottom_frame, text="Acordo",
+            command=lambda: self.validate_agreement(lambda agreement_: self.on_agreement(agreement_, database_,
+                                                                                         agreement_control_window)))
         self.agreement.pack(side=tk.LEFT, expand=True, fill=tk.X)
+        self.copy_agreement = widgets.Button(
+            bottom_frame, text="⋯", hover_text="Copiar texto de acordo",
+            command=lambda: self.validate_agreement(self.on_copy_agreement))
+        self.copy_agreement.pack(side=tk.LEFT)
         self.promise = widgets.Button(bottom_frame, text="Promessa", command=self.on_promise)
         self.promise.pack(side=tk.LEFT, expand=True, fill=tk.X)
         self.refusal = widgets.Button(bottom_frame, text="Recusa")
         self.refusal.pack(side=tk.LEFT, expand=True, fill=tk.X)
-        self.exception_proposal = widgets.Button(bottom_frame, text="Proposta de exceção")
+        self.exception_proposal = widgets.Button(
+            bottom_frame, text="Proposta de exceção",
+            command=lambda: self.validate_exception_proposal(
+                lambda ep_: self.on_exception_proposal(ep_, database_, ep_historic_window)))
         self.exception_proposal.pack(side=tk.LEFT, expand=True, fill=tk.X)
+        self.copy_exception_proposal = widgets.Button(
+            bottom_frame, text="⋯", hover_text="Copiar texto de proposta de exceção",
+            command=lambda: self.validate_exception_proposal(self.on_copy_exception_proposal))
+        self.copy_exception_proposal.pack(side=tk.LEFT)
         self.next_costumer = widgets.Button(bottom_frame, text="Próximo cliente")
         self.next_costumer.pack(side=tk.LEFT, expand=True, fill=tk.X)
         costumer_proposal_frame = ttk.LabelFrame(left_frame, text="Proposta do cliente")
@@ -619,8 +642,6 @@ class EasyServiceWindow:
         self.proposal.first_installment.bind("<Return>", lambda _: self.on_any_edit(self.on_first_installment_edit))
         self.proposal.else_installments.bind("<Return>", lambda _: self.on_any_edit(self.on_else_installment_edit))
         self.proposal.d_plus.bind("<Return>", lambda _: self.on_any_edit(self.on_d_plus_edit))
-        self.exception_proposal.config(command=lambda: self.on_exception_proposal(database_, ep_historic_window))
-        self.agreement.config(command=lambda: self.on_agreement(database_, agreement_control_window))
         self.add.config(command=self.on_add_click)
         self.next_costumer.config(command=lambda: self.reset(product_variable))
         self.debits_treeview.bind("<Button-1>", lambda _: self.on_debits_treeview_click())
@@ -729,28 +750,32 @@ class EasyServiceWindow:
             utils.copy_to_clipboard(self.window, final_text)
             self.do_log("Texto para recusa copiado com sucesso.")
 
-    def on_agreement(self, database_: database.DataBase, agreement_control_window: AgreementControlWindow):
+    def validate_agreement(self, callback: typing.Callable[[ep.ProposalWithDate], typing.Any]):
         selection = self.proposals.selection()
         if len(selection) == 0:
             self.do_log("Selecione a proposta que você fez o acordo.")
         elif self.cpf.is_using_placeholder():
             self.do_log("Preencha o CPF para fazer um acordo.")
         else:
-            proposal = self.proposals.get_proposal(selection[0])
-            agreement_ = agreement.Agreement(
-                self.cpf.get(),
-                proposal.get_total(),
-                datetime.date.today(),
-                (proposal.due_date - datetime.date.today()).days
-            )
-            database_.add_agreement(agreement_)
-            agreement_control_window.historic.add_agreement(agreement_)
-            agreements_keys = agreement_control_window.historic.get_children()
-            agreements = agreement_control_window.historic.get_agreements(agreements_keys)
-            agreement_control_window.update_statistics(agreements)
-            self.do_log("Acordo salvo com sucesso.")
+            proposal = self.proposals.get_proposal(self.proposals.selection()[0])
+            callback(proposal)
 
-    def on_exception_proposal(self, database_: database.DataBase, ep_historic_window: ExceptionProposalHistoricWindow):
+    def on_agreement(self, proposal: ep.ProposalWithDate, database_: database.DataBase,
+                     agreement_control_window: AgreementControlWindow):
+        utils.copy_to_clipboard(self.window, proposal.get_formatted_with_date())
+        agreement_ = proposal.to_agreement(self.cpf.get())
+        database_.add_agreement(agreement_)
+        agreement_control_window.historic.add_agreement(agreement_)
+        agreements_keys = agreement_control_window.historic.get_children()
+        agreements = agreement_control_window.historic.get_agreements(agreements_keys)
+        agreement_control_window.update_statistics(agreements)
+        self.do_log("Acordo copiado e salvo com sucesso.")
+
+    def on_copy_agreement(self, proposal: ep.ProposalWithDate):
+        utils.copy_to_clipboard(self.window, proposal.get_formatted_with_date())
+        self.do_log("Acordo copiado com sucesso.")
+
+    def validate_exception_proposal(self, callback: typing.Callable[[ep.ExceptionProposal], typing.Any]):
         if not regex.CPF.fullmatch(self.cpf.get()):
             self.do_log("Preencha o CPF corretamente para fazer uma proposta de exceção.")
         elif not regex.PHONE.fullmatch(self.phone.get()):
@@ -780,11 +805,19 @@ class EasyServiceWindow:
                 self.product.get(),
                 self.phone.get()
             )
-            utils.copy_to_clipboard(self.window, exception_proposal.get_text_to_copy())
-            exception_proposal_sent = exception_proposal.to_exception_proposal_sent()
-            database_.add_exception_proposal(exception_proposal_sent)
-            ep_historic_window.historic.add_exception_proposal(exception_proposal_sent)
-            self.do_log("Proposta de exceção copiada com sucesso.")
+            callback(exception_proposal)
+
+    def on_exception_proposal(self, exception_proposal: ep.ExceptionProposal, database_: database.DataBase,
+                              ep_historic_window: ExceptionProposalHistoricWindow):
+        utils.copy_to_clipboard(self.window, exception_proposal.get_text_to_copy())
+        exception_proposal_sent = exception_proposal.to_exception_proposal_sent()
+        database_.add_exception_proposal(exception_proposal_sent)
+        ep_historic_window.historic.add_exception_proposal(exception_proposal_sent)
+        self.do_log("Proposta de exceção salva e copiada com sucesso.")
+
+    def on_copy_exception_proposal(self, exception_proposal: ep.ExceptionProposal):
+        utils.copy_to_clipboard(self.window, exception_proposal.get_text_to_copy())
+        self.do_log("Proposta de exceção copiada com sucesso.")
 
     def on_add_click(self):
         if self.proposal.installments.is_using_placeholder():
