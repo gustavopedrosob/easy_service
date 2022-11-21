@@ -4,15 +4,14 @@ import tkinter as tk
 from tkinter import ttk
 
 import typing
-from pyperclip import paste
 
-from common import colors
+from common import colors, utils
 
 locale.setlocale(locale.LC_MONETARY, 'pt_BR.UTF-8')
 
 
 def _strip_content(event):
-    control_v_content = paste()
+    control_v_content = utils.get_clipboard_content(event.widget)
     control_v_content = control_v_content.strip()
     event.widget.insert(0, control_v_content)
 
@@ -101,7 +100,7 @@ class Button(tk.Button):
 class Treeview(ttk.Treeview):
     def __init__(self, *args, **kwargs):
         super(Treeview, self).__init__(*args, **kwargs)
-        self.bind("<Button-1>", self._on_click)
+        self.bind("<ButtonRelease-1>", self._on_click)
         self.context_menu_management = TreeviewContextMenuManagement(self)
         self._binds = {}
         self.sorting_column = ""
@@ -110,15 +109,29 @@ class Treeview(ttk.Treeview):
     def _on_click(self, event):
         region = self.identify_region(event.x, event.y)
         if region == "heading":
-            column = self.identify_column(event.x)
-            if column == self.sorting_column:
-                self.reverse_sorting = not self.reverse_sorting
-            else:
-                self.reverse_sorting = False
-                self.sorting_column = column
-            sort_command = self._binds.get("<Sort>")
-            if sort_command is not None:
-                sort_command(self.sorting_column, self.reverse_sorting)
+            self._on_sorting_click(event)
+        elif region == "cell":
+            self._on_row_click(event)
+
+    def _on_row_click(self, event):
+        selection = self.selection()
+        if self.identify_row(event.y) in selection:
+            command = self._binds.get("<Select>")
+        else:
+            command = self._binds.get("<Unselect>")
+        if command is not None:
+            command(selection)
+
+    def _on_sorting_click(self, event):
+        column = self.identify_column(event.x)
+        if column == self.sorting_column:
+            self.reverse_sorting = not self.reverse_sorting
+        else:
+            self.reverse_sorting = False
+            self.sorting_column = column
+        sort_command = self._binds.get("<Sort>")
+        if sort_command is not None:
+            sort_command(self.sorting_column, self.reverse_sorting)
 
     def own_bind(self, sequence: str, func) -> None:
         self._binds[sequence] = func
@@ -127,22 +140,17 @@ class Treeview(ttk.Treeview):
 class BrowseTreeview(Treeview):
     def __init__(self, *args, **kwargs):
         super(BrowseTreeview, self).__init__(*args, selectmode="none", **kwargs)
-        self.bind("<Button-1>", self._on_click)
 
-    def _on_click(self, event):
-        super()._on_click(event)
-        selection = self.selection()
+    def _on_row_click(self, event):
         row = self.identify_row(event.y)
-        region = self.identify_region(event.x, event.y)
-        if region == "cell":
-            if row in selection:
-                self.selection_remove(row)
-                command = self._binds.get("<Unselect>")
-            else:
-                self.selection_set(row)
-                command = self._binds.get("<Select>")
-            if command is not None:
-                command(row)
+        if row in self.selection():
+            self.selection_remove(row)
+            command = self._binds.get("<Unselect>")
+        else:
+            self.selection_set(row)
+            command = self._binds.get("<Select>")
+        if command is not None:
+            command(row)
 
 
 class Placeholder:

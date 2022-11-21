@@ -8,7 +8,7 @@ import typing
 import about
 import agreement
 import database
-from common import widgets, colors, formater, validators, converter, utils, regex
+from common import widgets, colors, formater, validators, converter, utils, regex, config
 from common import constants
 import exception_proposal as ep
 
@@ -121,7 +121,7 @@ class AgreementControlWindow:
 
     def __init__(self, database_: database.DataBase):
         self.top_level = tk.Toplevel()
-        self.top_level.minsize(800, 600)
+        self.top_level.minsize(*config.MIN_RESOLUTION)
         self.top_level.withdraw()
         self.top_level.title("Controle de acordos")
         self.top_level.protocol("WM_DELETE_WINDOW", self.top_level.withdraw)
@@ -335,7 +335,7 @@ class ExceptionProposalHistoricWindow:
         self.top_level = tk.Toplevel(master)
         self.top_level.withdraw()
         self.top_level.title("Histórico de propostas de exceção")
-        self.top_level.minsize(800, 600)
+        self.top_level.minsize(*config.MIN_RESOLUTION)
         self.top_level.protocol("WM_DELETE_WINDOW", self.top_level.withdraw)
         left_frame = ttk.LabelFrame(self.top_level, text="Editar")
         left_frame.pack(fill=tk.Y, side=tk.LEFT, padx=(0, 5))
@@ -486,7 +486,7 @@ class ProposalWithDate(Proposal):
         )
 
 
-class DebitTreeView(ttk.Treeview):
+class DebitTreeView(widgets.Treeview):
     def __init__(self, master):
         product = "product"
         value = "value"
@@ -509,8 +509,7 @@ class DebitTreeView(ttk.Treeview):
 class EasyServiceWindow:
     def __init__(self, window, database_, agreement_control_window, ep_historic_window, about_window):
         self.window = window
-        self.window.minsize(800, 600)
-        self.window.geometry("800x600")
+        self.window.minsize(*config.MIN_RESOLUTION)
         product_variable = tk.StringVar(window, name="product")
         d_plus_3_vc = self.new_vc(lambda text: validators.is_int_text_valid_for_input(text, 3, 1))
         d_plus_5_vc = self.new_vc(lambda text: validators.is_int_text_valid_for_input(text, 5, 1))
@@ -644,7 +643,8 @@ class EasyServiceWindow:
         self.proposal.d_plus.bind("<Return>", lambda _: self.on_any_edit(self.on_d_plus_edit))
         self.add.config(command=self.on_add_click)
         self.next_costumer.config(command=lambda: self.reset(product_variable))
-        self.debits_treeview.bind("<Button-1>", lambda _: self.on_debits_treeview_click())
+        self.debits_treeview.own_bind("<Select>", self.update_selection_total)
+        self.debits_treeview.own_bind("<Unselect>", lambda _: self.reset_selection_total)
 
     def on_promise(self):
         selection = self.debits_treeview.selection()
@@ -654,24 +654,24 @@ class EasyServiceWindow:
         else:
             self.do_log("Não há débitos selecionados para fazer uma promessa.")
 
-    def get_total_debits(self, keys) -> float:
+    def get_total_debits(self, keys: typing.Tuple[str]) -> float:
         return sum(map(lambda key: converter.brl_to_float(self.debits_treeview.item(key)["values"][1]), keys))
 
-    def update_selection_debits_treeview_total(self, keys):
+    def update_selection_total(self, keys: typing.Tuple[str]):
         self.selection_total.config(text=f"Total da seleção: {formater.format_brl(self.get_total_debits(keys))}")
 
-    def on_debits_treeview_click(self):
-        self.update_selection_debits_treeview_total(self.debits_treeview.selection_get())
+    def reset_selection_total(self):
+        self.selection_total.config(text="Total da seleção: N/A")
 
     def on_select_overdue_debits(self):
         children = self.debits_treeview.get_children()
         debits_to_select = tuple(filter(lambda child: int(self.debits_treeview.item(child)["values"][2]) > 0, children))
         self.debits_treeview.selection_add(debits_to_select)
-        self.update_selection_debits_treeview_total(debits_to_select)
+        self.update_selection_total(debits_to_select)
 
     def on_paste_debits(self):
         self.debits_treeview.delete(*self.debits_treeview.get_children())
-        clipboard_content = self.window.clipboard_get()
+        clipboard_content = utils.get_clipboard_content(self.window)
         debits = ep.get_debits_from_text(clipboard_content)
         for debit in debits:
             self.debits_treeview.insert_debit(debit)

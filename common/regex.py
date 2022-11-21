@@ -12,5 +12,6 @@ CAN_BE_BRL = re.compile(r"(?:R\$ )?(?:[1-9]\d{1,2}|\d)\.?(?:[1-9]\d{1,2}|\d)(?:,
 MAY_BE_BRL = re.compile(
     r"R?\$? ?(([1-9]\d{2}|[1-9]\d|[1-9])\.?\d{0,3}((?<=\d{3})(,\d{0,2}))?|([1-9]\d{2}|[1-9]\d|\d)(,\d{0,2})?)?")
 EMAIL = re.compile(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+")
+MAY_BE_EMAIL = re.compile(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+")
 PRODUCT = re.compile(r"Cbrcrel|Ccrcfi|Epcfi")
 DATE = re.compile(r"\d{2}/\d{2}/\d{4}")
