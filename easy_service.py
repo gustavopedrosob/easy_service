@@ -229,7 +229,6 @@ class AgreementControlWindow:
         self.historic.update_agreements(agreements, self.STATES.index(state) if state in self.STATES else None,
                                         self.historic.SORTING_TABLE.get(self.historic.sorting_column),
                                         self.historic.reverse_sorting, cpf)
-        self.update_statistics(agreements)
 
     def on_select_period(self, database_: database.DataBase):
         agreements = database_.get_agreement_historic()
@@ -786,8 +785,8 @@ class EasyServiceWindow:
         agreement_ = proposal.to_agreement(self.cpf.get())
         database_.add_agreement(agreement_)
         agreement_control_window.historic.add_agreement(agreement_)
-        agreements_keys = agreement_control_window.historic.get_children()
-        agreements = agreement_control_window.historic.get_agreements(agreements_keys)
+        agreements = database_.get_agreement_historic()
+        agreement_control_window.update_agreements_with_context(database_)
         agreement_control_window.update_statistics(agreements)
         self.do_log("Acordo copiado e salvo com sucesso.")
 
