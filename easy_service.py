@@ -210,11 +210,13 @@ class AgreementControlWindow:
         agreement_ = self.historic.get_agreement(self.historic.selection()[0])
         database_.set_agreement_as_promise(agreement_.id)
         self.update_agreements_with_context(database_)
+        self.update_statistics(database_.get_agreement_historic())
 
     def on_set_agreement_as_payed(self, database_: database.DataBase):
         agreement_ = self.historic.get_agreement(self.historic.selection()[0])
         database_.set_agreement_as_payed(agreement_.id)
         self.update_agreements_with_context(database_)
+        self.update_statistics(database_.get_agreement_historic())
 
     def on_select_state(self, database_: database.DataBase):
         self.update_agreements_with_context(database_)
