@@ -1,3 +1,4 @@
+from __future__ import annotations
 import functools
 import json
 import os.path
@@ -253,7 +254,6 @@ class AgreementControlWindow:
                    "Esta semana": lambda agreement_: first_week_day < agreement_.create_date < last_week_day,
                    "Este mês": lambda agreement_: first_month_day < agreement_.create_date < last_month_day}
         filter_ = filters.get(period)
-        print(filter_)
         if filter_ is None:
             filtered_agreements = agreements
         else:
@@ -391,12 +391,12 @@ class ExceptionProposalHistoricWindow:
             label="Remover",
             command=lambda: self.on_remove(app))
 
-    def on_remove(self, app):
+    def on_remove(self, app: EasyServiceApp):
         selected = self.historic.selection()[0]
         self.historic.delete(selected)
         app.database.delete_exception_proposal(int(selected))
 
-    def on_confirm(self, database_: database.DataBase):
+    def on_confirm(self, app: EasyServiceApp):
         counter_proposal = self.counter_proposal.get()
         installments = self.installments.get()
         selected = self.historic.selection()
@@ -405,8 +405,8 @@ class ExceptionProposalHistoricWindow:
             cpf, value, create_date, due_date, _, _ = self.historic.item(selected)["values"]
             values_to_insert = (cpf, value, create_date, due_date, formater.format_brl(counter_proposal), installments)
             self.historic.item(selected, values=values_to_insert)
-            database_.edit_exception_proposal(int(selected), converter.brl_to_float(counter_proposal),
-                                              int(installments))
+            app.database.edit_exception_proposal(int(selected), converter.brl_to_float(counter_proposal),
+                                                 int(installments))
 
 
 class ProposalsTreeView(widgets.BrowseTreeview):
