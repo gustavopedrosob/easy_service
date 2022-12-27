@@ -31,46 +31,45 @@ class Config:
 
 
 class Proposal:
-    def __init__(self, installments: int, first_installment: float, else_installment: typing.Optional[float]):
-        self.installments = installments
-        self.first_installment = first_installment
-        self.else_installments = else_installment
-
-    def get_formatted(self) -> str:
-        if self.is_installments():
-            return "{} + {}x {}".format(
-                formater.format_brl(self.first_installment),
-                self.installments - 1,
-                formater.format_brl(self.else_installments)
-                )
-        else:
-            return formater.format_brl(self.first_installment)
-
-    def is_installments(self) -> bool:
-        return self.installments > 1
-
-    def get_total(self) -> float:
-        if self.is_installments():
-            return self.first_installment + (self.installments - 1) * self.else_installments
-        else:
-            return self.first_installment
-
-    def calcules_discount(self, proposal):
-        return round((self.get_total() / proposal.get_total() - 1) * -100, 2)
-
-
-class ProposalWithDate(Proposal):
-    def __init__(self, installments: int, first_installment: float, else_installment: typing.Optional[float],
-                 due_date: datetime.date):
-        super().__init__(installments, first_installment, else_installment)
+    def __init__(self, first: float, due_date: datetime.date):
+        self.first = first
         self.due_date = due_date
 
+    def get_total(self) -> float:
+        return self.first
+
+    def get_formatted(self) -> str:
+        return formater.format_brl(self.first)
+
     def get_formatted_with_date(self) -> str:
-        return f"{self.get_formatted()} até {self.due_date.strftime('%d/%m')};"
+        return f"{self.get_formatted()} até {self.due_date.strftime('%d/%m')}."
+
+    def get_formatted_to_register(self, product: str) -> str:
+        return f"Produto: {product}, {self.get_formatted()} até {self.due_date.strftime('%d/%m')}."
 
     def to_agreement(self, cpf: str) -> agreement.Agreement:
         today = datetime.date.today()
         return agreement.Agreement(cpf, self.get_total(), today, (self.due_date - today).days)
+
+
+class InstallmentProposal(Proposal):
+    def __init__(self, installments: int, first: float, rest: typing.Optional[float], due_date: datetime.date):
+        self.installments = installments
+        self.rest = rest
+        super().__init__(first, due_date)
+
+    def get_formatted(self) -> str:
+        return "{} + {}x {}".format(
+            formater.format_brl(self.first),
+            self.installments - 1,
+            formater.format_brl(self.rest)
+        )
+
+    def get_total(self) -> float:
+        return self.first + (self.installments - 1) * self.rest
+
+    def calcules_discount(self, proposal):
+        return round((self.get_total() / proposal.get_total() - 1) * -100, 2)
 
 
 class ExceptionProposalSent:
@@ -96,7 +95,8 @@ class ExceptionProposalSent:
 
 class ExceptionProposal:
     def __init__(self, cpf: str, main_value: float, promotion: float,
-                 proposed: ProposalWithDate, email: str, delayed: int, product: str, phone: str):
+                 proposed: typing.Union[Proposal, InstallmentProposal], email: str, delayed: int, product: str,
+                 phone: str):
         self.cpf = cpf
         self.main_value = main_value
         self.promotion = promotion
@@ -114,7 +114,7 @@ class ExceptionProposal:
             f'Valor com desconto: {formater.format_brl(self.promotion)}',
             f'Dias em atraso: {self.delayed}',
             f'Data proposta para pagamento: {self.proposed.due_date.strftime("%d/%m")}',
-            f'Proposta para pagamento: {constants.IS_INSTALLMENT_TABLE[self.proposed.is_installments()]}',
+            f'Proposta para pagamento: {"Parcelado" if isinstance(self.proposed, InstallmentProposal) else "À vista"}',
             f'Valor proposto para pagamento: {self.proposed.get_formatted()}',
             f'Telefone: {formater.format_phone(self.phone)}',
             f'E-mail: {self.email}'
@@ -139,9 +139,6 @@ class Debit:
 
 def get_debits_from_text(text: str) -> typing.List[Debit]:
     debits = []
-    values = regex.BRL.findall(text)
-    products = regex.PRODUCT.findall(text)
-    due_dates = regex.DATE.findall(text)
-    for value, product, due_date in zip(values, products, due_dates):
-        debits.append(Debit(product, converter.brl_to_float(value), converter.date_str_to_date(due_date)))
+    for value, product, due_date in zip(regex.BRL.findall(text), regex.PRODUCT.findall(text), regex.DATE.findall(text)):
+        debits.append(Debit(product, converter.brl_to_float(value), converter.parse_date(due_date)))
     return debits

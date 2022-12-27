@@ -13,5 +13,5 @@ def str_to_bool(condition: str) -> bool:
     return condition == "Sim"
 
 
-def date_str_to_date(date_str: str) -> datetime.date:
+def parse_date(date_str: str) -> datetime.date:
     return datetime.datetime.strptime(date_str, "%d/%m/%Y").date()

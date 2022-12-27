@@ -1,5 +1,6 @@
-import tkinter as tk
+from tkinter import ttk
 
+import tkinter as tk
 from common import config
 
 
@@ -11,5 +12,5 @@ class AboutWindow:
         self.top_level.resizable(False, False)
         self.top_level.withdraw()
         self.top_level.protocol("WM_DELETE_WINDOW", self.top_level.withdraw)
-        tk.Label(self.top_level,
-                 text=f"Programa desenvolvido por Gustavo Pedroso Bernardes\nVersão: {config.VERSION}").pack()
+        ttk.Label(self.top_level,
+                  text=f"Programa desenvolvido por Gustavo Pedroso Bernardes\nVersão: {config.VERSION}").pack()

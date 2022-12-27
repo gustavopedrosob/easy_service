@@ -1,11 +1,11 @@
+from common import utils, colors
+from tkinter import ttk
+
 import locale
 import threading
 import tkinter as tk
-from tkinter import ttk
-
 import typing
 
-from common import colors, utils
 
 locale.setlocale(locale.LC_MONETARY, 'pt_BR.UTF-8')
 
@@ -84,23 +84,17 @@ class HoverText:
             self.place_timer = None
 
 
-class Button(tk.Button):
-    def __init__(self, master, relief=tk.RIDGE, activebackground=colors.WHITE, hover_text: typing.Optional[str] = None,
-                 **kwargs):
-        super().__init__(
-            master=master,
-            relief=relief,
-            borderwidth=1,
-            activebackground=activebackground,
-            **kwargs
-        )
+class Button(ttk.Button):
+    def __init__(self, master, hover_text: typing.Optional[str] = None, **kwargs):
+        super().__init__(master, **kwargs)
         HoverText(self, hover_text)
 
 
 class Treeview(ttk.Treeview):
     def __init__(self, *args, **kwargs):
         super(Treeview, self).__init__(*args, **kwargs)
-        self.bind("<ButtonRelease-1>", self._on_click)
+        self.bind("<Button-1>", self._on_click)
+        self.bind("<ButtonRelease-1>", self._on_click_release)
         self.context_menu_management = TreeviewContextMenuManagement(self)
         self._binds = {}
         self.sorting_column = ""
@@ -113,7 +107,15 @@ class Treeview(ttk.Treeview):
         elif region == "cell":
             self._on_row_click(event)
 
+    def _on_click_release(self, event):
+        region = self.identify_region(event.x, event.y)
+        if region == "cell":
+            self._on_row_click_release(event)
+
     def _on_row_click(self, event):
+        pass
+
+    def _on_row_click_release(self, event):
         selection = self.selection()
         if self.identify_row(event.y) in selection:
             command = self._binds.get("<Select>")
@@ -152,94 +154,5 @@ class BrowseTreeview(Treeview):
         if command is not None:
             command(row)
 
-
-class Placeholder:
-    def __init__(self, widget, placeholder, placeholder_color):
-        self._widget = widget
-        self.__default_config = {
-            "foreground": self._widget["foreground"],
-            "validate": self._widget["validate"],
-            "validatecommand": self._widget["validatecommand"]
-        }
-        self.__placeholder = placeholder
-        self.__placeholder_color = placeholder_color
-
-        self._widget.bind("<FocusIn>", self._on_focus_in)
-        self._widget.bind("<FocusOut>", self.on_focus_out)
-
-        self.__placeholder_on()
-
-    def placeholder_config(self, **kwargs):
-        for key, value in kwargs.items():
-            if key in self.__default_config:
-                self.__default_config[key] = value
-        self._widget.config(**kwargs)
-
-    def __placeholder_on(self):
-        self._widget.config(validate="none", validatecommand="", fg=self.__placeholder_color)
-        self._widget.delete(0, tk.END)
-        self._widget.insert(0, self.__placeholder)
-
-    def __placeholder_off(self):
-        self._widget.config(**self.__default_config)
-
-    def _is_using_placeholder_style(self) -> bool:
-        return str(self._widget["foreground"]) == self.__placeholder_color
-
-    def _is_using_placeholder_text(self) -> bool:
-        return self._widget.get() == self.__placeholder
-
-    def is_using_placeholder(self) -> bool:
-        return self._is_using_placeholder_style() and self._is_using_placeholder_text()
-
-    def set_placeholder(self, mode: bool):
-        if mode:
-            self.__placeholder_on()
-        else:
-            self.__placeholder_off()
-
-    def __is_empty(self):
-        return self._widget.get() == ""
-
-    def _on_focus_in(self, event):
-        if self.is_using_placeholder():
-            self._widget.delete(0, tk.END)
-            self.__placeholder_off()
-        # Previne que quando o widget for alterado não continue com o estilo de placeholder.
-        # if self._is_using_placeholder_style() and not self._is_using_placeholder_text():
-        #     self.__placeholder_off()
-
-    def on_focus_out(self, event):
-        if self.__is_empty():
-            self.__placeholder_on()
-
-    def set_text(self, text: str):
-        self._widget.delete(0, tk.END)
-        self.__placeholder_off()
-        self._widget.insert(0, text)
-
-
-class Spinbox(tk.Spinbox, Placeholder):
-    def __init__(self, *args, placeholder, width=30, hover_text: typing.Optional[str] = None, placeholder_color="Grey",
-                 **kwargs):
-        super().__init__(*args, width=width, **kwargs)
-        self.unbind_class("Spinbox", "<Control-v>")
-        self.bind("<Control-v>", _strip_content)
-        HoverText(self, hover_text)
-        Placeholder.__init__(self, self, placeholder, placeholder_color)
-
-
-class Entry(tk.Entry, Placeholder):
-    def __init__(self, *args, placeholder, width=30, hover_text: typing.Optional[str] = None,
-                 placeholder_color="Grey", **kwargs):
-        super().__init__(*args, width=width, **kwargs)
-        self.unbind_class("Entry", "<Control-v>")
-        self.bind("<Control-v>", _strip_content)
-        HoverText(self, hover_text)
-        Placeholder.__init__(self, self, placeholder, placeholder_color)
-
-
-class Combobox(ttk.Combobox):
-    def __init__(self, *args, hover_text: typing.Optional[str] = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        HoverText(self, hover_text)
+    def _on_row_click_release(self, event):
+        pass

@@ -1,3 +1,5 @@
+import datetime
+import functools
 import typing
 
 
@@ -16,3 +18,15 @@ def is_int_text_valid(text: str, max_: int, min_: int) -> bool:
         return False
     else:
         return max_ >= integer >= min_
+
+
+def validate_date(text: str):
+    try:
+        datetime.datetime.strptime(text, "%d/%m/%Y")
+    except ValueError:
+        return False
+    else:
+        return True
+
+
+validate_installments = functools.partial(is_int_text_valid, max_=24, min_=1)
