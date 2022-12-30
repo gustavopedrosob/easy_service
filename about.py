@@ -11,6 +11,7 @@ class AboutWindow:
         self.top_level.configure(padx=20, pady=30)
         self.top_level.resizable(False, False)
         self.top_level.withdraw()
+        self.top_level.iconbitmap("icon.ico")
         self.top_level.protocol("WM_DELETE_WINDOW", self.top_level.withdraw)
         ttk.Label(self.top_level,
                   text=f"Programa desenvolvido por Gustavo Pedroso Bernardes\nVersão: {config.VERSION}").pack()
