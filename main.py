@@ -547,13 +547,13 @@ class EasyServiceWindow:
         self.window.title("Atendimento fácil")
         self.window.configure(menu=self.menu)
         left_notebook = ttk.Notebook()
-        top_notebook = ttk.Notebook()
+        top_frame = ttk.Frame()
         bottom_frame = ttk.Frame()
         self.log = ttk.Label(anchor=tk.W, padding=5)
         self.log.pack(side=tk.BOTTOM, fill=tk.X)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.BOTH)
         left_notebook.pack(side=tk.LEFT, fill=tk.BOTH)
-        top_notebook.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5)
+        top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH, padx=5)
         data_frame = ttk.Frame(left_notebook)
         costumer_label_frame = ttk.LabelFrame(data_frame, text="Sobre o cliente")
         costumer_label_frame.pack(padx=5, pady=5, expand=True, fill=tk.BOTH)
@@ -581,26 +581,11 @@ class EasyServiceWindow:
         self.promotion.pack(fill=tk.X, padx=5)
         left_notebook.add(data_frame)
         left_notebook.tab(0, text="Dados")
-        proposes_frame = ttk.Frame(top_notebook)
-        top_notebook.add(proposes_frame)
-        top_notebook.tab(0, text="Propostas")
-        self.proposals = ProposalsTreeView(proposes_frame)
+        self.proposals = ProposalsTreeView(top_frame)
         self.proposals.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.refusal_reason = LabelAndWidget(proposes_frame, "Motivo de Recusa", ttk.Combobox,
+        self.refusal_reason = LabelAndWidget(top_frame, "Motivo de Recusa", ttk.Combobox,
                                              values=tuple(constants.REFUSAL_REASONS.keys()))
         self.refusal_reason.pack(side=tk.RIGHT, fill=tk.X, anchor=tk.SE, padx=(0, 10), pady=(0, 5))
-        debits_frame = tk.Frame(top_notebook)
-        top_notebook.add(debits_frame)
-        top_notebook.tab(1, text="Débitos")
-        self.debits_treeview = DebitTreeView(debits_frame)
-        self.debits_treeview.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.selection_total = ttk.Label(debits_frame, text="Total da seleção: N/A")
-        self.selection_total.pack(padx=10, pady=5, side=tk.LEFT, anchor=tk.SW)
-        self.select_overdue_debits = widgets.Button(debits_frame, text="Selecionar vencidos",
-                                                    command=self.on_select_overdue_debits)
-        self.select_overdue_debits.pack(padx=10, pady=5, side=tk.RIGHT, anchor=tk.SE)
-        self.paste_debits = widgets.Button(debits_frame, text="Colar", command=self.on_paste_debits)
-        self.paste_debits.pack(pady=5, side=tk.RIGHT, anchor=tk.SE)
         self.agreement = widgets.Button(
             bottom_frame, text="Acordo",
             command=lambda: self.validate_agreement(lambda agreement_: self.on_agreement(app, agreement_)))
@@ -609,8 +594,6 @@ class EasyServiceWindow:
             bottom_frame, text="⋯", hover_text="Copiar texto de acordo",
             command=lambda: self.validate_agreement(self.on_copy_agreement))
         self.copy_agreement.pack(side=tk.LEFT, padx=(2, 0))
-        self.promise = widgets.Button(bottom_frame, text="Promessa", command=self.on_promise)
-        self.promise.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=10, pady=5)
         self.refusal = widgets.Button(bottom_frame, text="Recusa", command=self.on_refusal)
         self.refusal.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 10), pady=5)
         self.exception_proposal = widgets.Button(
@@ -642,8 +625,6 @@ class EasyServiceWindow:
         self.proposal.due_date.widget.bind("<Return>", self.on_proposal_property_edit)
         self.proposals.own_bind("<Select>", self.on_select_proposal)
         self.proposals.own_bind("<Unselect>", lambda _: self.on_unselect_proposal())
-        self.debits_treeview.own_bind("<Select>", self.update_selection_total)
-        self.debits_treeview.own_bind("<Unselect>", lambda _: self.reset_selection_total)
         self.proposal.set_due_date_with_d_plus(1)
         if os.path.exists("theme.json"):
             sv_ttk.set_theme(self.load_saved_theme())
@@ -661,36 +642,6 @@ class EasyServiceWindow:
             content = json.load(file)
             return content["theme"]
 
-    def on_promise(self):
-        selection = self.debits_treeview.selection()
-        if selection:
-            utils.copy_to_clipboard(self.window, formater.format_brl(self.get_total_debits(selection)))
-            self.do_log("Promessa copiada com sucesso.")
-        else:
-            self.do_log("Não há débitos selecionados para fazer uma promessa.")
-
-    def get_total_debits(self, keys: typing.Tuple[str]) -> float:
-        return sum(map(lambda key: converter.brl_to_float(self.debits_treeview.item(key)["values"][1]), keys))
-
-    def update_selection_total(self, keys: typing.Tuple[str]):
-        self.selection_total.config(text=f"Total da seleção: {formater.format_brl(self.get_total_debits(keys))}")
-
-    def reset_selection_total(self):
-        self.selection_total.config(text="Total da seleção: N/A")
-
-    def on_select_overdue_debits(self):
-        children = self.debits_treeview.get_children()
-        debits_to_select = tuple(filter(lambda child: int(self.debits_treeview.item(child)["values"][2]) > 0, children))
-        self.debits_treeview.selection_add(debits_to_select)
-        self.update_selection_total(debits_to_select)
-
-    def on_paste_debits(self):
-        self.debits_treeview.delete(*self.debits_treeview.get_children())
-        clipboard_content = utils.get_clipboard_content(self.window)
-        debits = ep.get_debits_from_text(clipboard_content)
-        for debit in debits:
-            self.debits_treeview.insert_debit(debit)
-
     def do_log(self, log: str):
         self.log.config(text=log)
         timer = threading.Timer(3, lambda: self.log.config(text=""))
@@ -701,8 +652,6 @@ class EasyServiceWindow:
                       self.refusal_reason):
             entry.delete(0, tk.END)
         self.proposal.reset()
-        self.debits_treeview.delete(*self.debits_treeview.get_children())
-        self.selection_total.config(text="Total da seleção: N/A")
         self.proposals.delete(*self.proposals.get_children())
         self.proposal.set_due_date_with_d_plus(1)
         self.window.focus_force()
@@ -836,9 +785,8 @@ class EasyServiceApp:
         self.window.mainloop()
 
     def new_validate_command(self, validate_command: typing.Union[typing.Callable[[str], bool], str, typing.Pattern]):
-        return dict(
-            validate="focusout",
-            validatecommand=(self.window.register(lambda string: bool(validate_command(string))), "%P"))
+        return dict(validate="focusout",
+                    validatecommand=(self.window.register(lambda string: bool(validate_command(string))), "%P"))
 
 
 if __name__ == '__main__':
